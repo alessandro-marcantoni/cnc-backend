@@ -33,3 +33,5 @@ go.work.sum
 
 .DS_Store
 .zed
+main/tmp/
+main/.air.toml
