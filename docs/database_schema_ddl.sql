@@ -1,0 +1,200 @@
+-- =========================
+-- MEMBERS
+-- =========================
+CREATE TABLE IF NOT EXISTS members (
+    id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+    first_name VARCHAR(100) NOT NULL,
+    last_name  VARCHAR(100) NOT NULL,
+    date_of_birth DATE NOT NULL,
+    email VARCHAR(255) NOT NULL UNIQUE
+);
+
+-- =========================
+-- PHONE NUMBERS (1:N)
+-- =========================
+CREATE TABLE IF NOT EXISTS phone_numbers (
+    id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+    member_id BIGINT NOT NULL REFERENCES members(id) ON DELETE CASCADE,
+    number VARCHAR(50) NOT NULL,
+    description VARCHAR(255),
+    UNIQUE(member_id, number)
+);
+
+CREATE INDEX IF NOT EXISTS idx_phone_numbers_member
+ON phone_numbers(member_id);
+
+-- =========================
+-- ADDRESSES (1:N)
+-- =========================
+CREATE TABLE IF NOT EXISTS addresses (
+    id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+    member_id BIGINT NOT NULL REFERENCES members(id) ON DELETE CASCADE,
+    country VARCHAR(100) NOT NULL,
+    city VARCHAR(100) NOT NULL,
+    street VARCHAR(255) NOT NULL,
+    street_number VARCHAR(50) NOT NULL
+);
+
+CREATE INDEX IF NOT EXISTS idx_addresses_member
+ON addresses(member_id);
+
+-- =========================
+-- FACILITIES CATALOG
+-- =========================
+CREATE TABLE IF NOT EXISTS facilities_catalog (
+    id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+    name VARCHAR(100) NOT NULL UNIQUE,
+    description TEXT,
+    suggested_price NUMERIC(10,2) NOT NULL CHECK (suggested_price >= 0)
+);
+
+CREATE TABLE IF NOT EXISTS facilities (
+    id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+    facility_type_id BIGINT NOT NULL REFERENCES facilities_catalog(id),
+    identifier VARCHAR(255) NOT NULL UNIQUE
+);
+
+CREATE INDEX IF NOT EXISTS idx_facilities_type
+ON facilities(facility_type_id);
+
+-- =========================
+-- RENTED FACILITIES (HISTORY)
+-- =========================
+CREATE TABLE IF NOT EXISTS rented_facilities (
+    id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+    facility_id BIGINT NOT NULL REFERENCES facilities(id),
+    member_id BIGINT NOT NULL REFERENCES members(id),
+    rented_at TIMESTAMP NOT NULL DEFAULT now(),
+    expires_at TIMESTAMP NOT NULL,
+    CHECK (expires_at > rented_at)
+);
+
+CREATE INDEX IF NOT EXISTS idx_rented_facility_member
+ON rented_facilities(member_id);
+
+CREATE INDEX IF NOT EXISTS idx_rented_facility_facility
+ON rented_facilities(facility_id);
+
+CREATE INDEX IF NOT EXISTS idx_rented_facilities_expires
+ON rented_facilities(facility_id, expires_at);
+
+-- =========================
+-- MEMBERSHIPS
+-- =========================
+CREATE TABLE IF NOT EXISTS membership_statuses (
+    id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+    status VARCHAR(50) NOT NULL UNIQUE
+);
+
+CREATE TABLE IF NOT EXISTS memberships (
+    id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+    member_id BIGINT NOT NULL REFERENCES members(id),
+    number BIGINT NOT NULL UNIQUE,
+    created_at TIMESTAMP NOT NULL DEFAULT now()
+);
+
+CREATE INDEX IF NOT EXISTS idx_memberships_member
+ON memberships(member_id);
+
+CREATE TABLE IF NOT EXISTS membership_periods (
+    id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+    membership_id BIGINT NOT NULL
+        REFERENCES memberships(id) ON DELETE CASCADE,
+    valid_from TIMESTAMP NOT NULL,
+    expires_at TIMESTAMP NOT NULL,
+    status_id BIGINT NOT NULL
+        REFERENCES membership_statuses(id),
+    exclusion_deliberated_at TIMESTAMP,
+    excluded_at TIMESTAMP,
+    CHECK (expires_at > valid_from),
+    UNIQUE (membership_id, valid_from)
+);
+
+CREATE UNIQUE INDEX IF NOT EXISTS one_active_period_per_membership
+ON membership_periods(membership_id)
+WHERE status_id = 1;
+
+CREATE INDEX IF NOT EXISTS idx_membership_periods_membership
+ON membership_periods(membership_id);
+
+CREATE INDEX IF NOT EXISTS idx_membership_periods_status
+ON membership_periods(status_id);
+
+CREATE INDEX IF NOT EXISTS idx_membership_periods_validity
+ON membership_periods(valid_from, expires_at);
+
+-- =========================
+-- PAYMENTS (POLYMORPHIC)
+-- =========================
+CREATE TABLE IF NOT EXISTS payments (
+    id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+    rented_facility_id BIGINT REFERENCES rented_facilities(id),
+    membership_period_id BIGINT REFERENCES membership_periods(id),
+    amount NUMERIC(10,2) NOT NULL CHECK (amount >= 0),
+    currency CHAR(3) NOT NULL DEFAULT 'EUR',
+    paid_at TIMESTAMP NOT NULL DEFAULT now(),
+    payment_method VARCHAR(255) NOT NULL,
+    transaction_ref TEXT UNIQUE,
+    CHECK (
+        (rented_facility_id IS NOT NULL AND membership_period_id IS NULL)
+     OR (rented_facility_id IS NULL AND membership_period_id IS NOT NULL)
+    )
+);
+
+CREATE INDEX IF NOT EXISTS idx_payments_membership_period
+ON payments(membership_period_id);
+
+CREATE INDEX IF NOT EXISTS idx_payments_rented_facility
+ON payments(rented_facility_id);
+
+CREATE INDEX IF NOT EXISTS idx_payments_paid_at
+ON payments(paid_at);
+
+-- =========================
+-- BOATS (1:1 WITH RENTED)
+-- =========================
+CREATE TABLE IF NOT EXISTS boats (
+    id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+    rented_facility_id BIGINT NOT NULL UNIQUE
+        REFERENCES rented_facilities(id) ON DELETE CASCADE,
+    name VARCHAR(255) NOT NULL,
+    length_meters NUMERIC(10,2) NOT NULL CHECK (length_meters > 0),
+    width_meters  NUMERIC(10,2) NOT NULL CHECK (width_meters > 0)
+);
+
+-- =========================
+-- INSURANCES (1:N WITH BOAT)
+-- =========================
+CREATE TABLE IF NOT EXISTS insurances (
+    id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+    boat_id BIGINT NOT NULL REFERENCES boats(id) ON DELETE CASCADE,
+    provider VARCHAR(255) NOT NULL,
+    number VARCHAR(255) NOT NULL,
+    expires_at TIMESTAMP NOT NULL
+);
+
+CREATE INDEX IF NOT EXISTS idx_insurances_boat
+ON insurances(boat_id);
+
+CREATE INDEX IF NOT EXISTS idx_insurances_expiry
+ON insurances(expires_at);
+
+-- =========================
+-- WAITING LIST
+-- =========================
+CREATE TABLE IF NOT EXISTS members_waiting (
+    id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+    member_id BIGINT NOT NULL REFERENCES members(id),
+    facility_type_id BIGINT NOT NULL REFERENCES facilities_catalog(id),
+    queued_at TIMESTAMP NOT NULL DEFAULT now(),
+    UNIQUE(member_id, facility_type_id)
+);
+
+CREATE INDEX IF NOT EXISTS idx_waiting_member
+ON members_waiting(member_id);
+
+CREATE INDEX IF NOT EXISTS idx_waiting_facility_type
+ON members_waiting(facility_type_id);
+
+CREATE INDEX IF NOT EXISTS idx_waiting_queued
+ON members_waiting(queued_at);
