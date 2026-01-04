@@ -5,5 +5,5 @@ type Address struct {
 	City    string
 	ZipCode *string
 	Street  string
-	Number  int32
+	Number  string
 }

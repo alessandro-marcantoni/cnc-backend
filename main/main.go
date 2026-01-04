@@ -6,9 +6,20 @@ import (
 	"time"
 
 	internalHttp "github.com/alessandro-marcantoni/cnc-backend/main/infrastructure/http"
+	"github.com/alessandro-marcantoni/cnc-backend/main/infrastructure/persistence"
 )
 
 func main() {
+	// Initialize database connection
+	db, err := persistence.InitializeDatabase()
+	if err != nil {
+		log.Fatalf("❌ Failed to initialize database: %v", err)
+	}
+	defer db.Close()
+
+	// Initialize services with database
+	internalHttp.InitializeServices(db)
+
 	mux := internalHttp.NewRouter()
 
 	server := &http.Server{

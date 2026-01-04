@@ -33,8 +33,8 @@ func (m Member) RenewMembership() result.Result[Member] {
 }
 
 func (m Member) DeliberateExclusion(decisionDate time.Time) result.Result[Member] {
-	if m.Membership.Status.GetStatus() != MembershipStatusExpired {
-		return result.Err[Member](errors.MembershipStatusError{Description: "only expired members can be deliberatively excluded"})
+	if m.Membership.Status.GetStatus() != MembershipStatusUnpaid {
+		return result.Err[Member](errors.MembershipStatusError{Description: "only members who did not pay can be deliberatively excluded"})
 	}
 	return result.Ok(Member{
 		User:       m.User,

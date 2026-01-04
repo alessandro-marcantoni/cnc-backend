@@ -1,12 +1,26 @@
 package http
 
 import (
+	"database/sql"
 	"encoding/json"
 	"net/http"
+	"strconv"
 	"strings"
 
+	"github.com/alessandro-marcantoni/cnc-backend/main/domain"
+	"github.com/alessandro-marcantoni/cnc-backend/main/domain/membership"
+	"github.com/alessandro-marcantoni/cnc-backend/main/infrastructure/persistence"
 	"github.com/alessandro-marcantoni/cnc-backend/main/infrastructure/presentation"
 )
+
+var (
+	memberService *membership.MemberManagementService
+)
+
+func InitializeServices(db *sql.DB) {
+	memberRepository := persistence.NewSQLMemberRepository(db)
+	memberService = membership.NewMemberManagementService(memberRepository)
+}
 
 func HealthHandler(w http.ResponseWriter, r *http.Request) {
 	presentation.WriteJSON(w, http.StatusOK, map[string]string{"status": "ok"})
@@ -15,9 +29,18 @@ func HealthHandler(w http.ResponseWriter, r *http.Request) {
 func MembersHandler(w http.ResponseWriter, r *http.Request) {
 	switch r.Method {
 	case http.MethodGet:
-		members := []presentation.Member{
-			{ID: "1", Name: "Mario Rossi", Email: "mario@example.com"},
+		if memberService == nil {
+			presentation.WriteError(w, http.StatusInternalServerError, "service not initialized")
+			return
 		}
+
+		result := memberService.GetUpdatedListOfMembers()
+		if !result.IsSuccess() {
+			presentation.WriteError(w, http.StatusInternalServerError, result.Error().Error())
+			return
+		}
+
+		members := presentation.ConvertMembersToPresentation(result.Value())
 		presentation.WriteJSON(w, http.StatusOK, members)
 
 	case http.MethodPost:
@@ -34,19 +57,35 @@ func MembersHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func MemberByIDHandler(w http.ResponseWriter, r *http.Request) {
-	id := strings.TrimPrefix(r.URL.Path, "/api/v1.0/members/")
-	if id == "" {
+	idStr := strings.TrimPrefix(r.URL.Path, "/api/v1.0/members/")
+	if idStr == "" {
 		presentation.WriteError(w, http.StatusBadRequest, "missing id")
+		return
+	}
+
+	id, err := strconv.ParseInt(idStr, 10, 64)
+	if err != nil {
+		presentation.WriteError(w, http.StatusBadRequest, "invalid id format")
 		return
 	}
 
 	switch r.Method {
 	case http.MethodGet:
-		presentation.WriteJSON(w, http.StatusOK, presentation.Member{
-			ID:    id,
-			Name:  "Mario Bianchi",
-			Email: "mario@example.com",
-		})
+		if memberService == nil {
+			presentation.WriteError(w, http.StatusInternalServerError, "service not initialized")
+			return
+		}
+
+		memberId := domain.Id[membership.Member]{Value: id}
+		result := memberService.GetMemberById(memberId)
+
+		if !result.IsSuccess() {
+			presentation.WriteError(w, http.StatusNotFound, "member not found")
+			return
+		}
+
+		member := presentation.ConvertMemberToPresentation(result.Value())
+		presentation.WriteJSON(w, http.StatusOK, member)
 
 	case http.MethodDelete:
 		w.WriteHeader(http.StatusNoContent)

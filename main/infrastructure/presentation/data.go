@@ -1,7 +1,58 @@
 package presentation
 
+type PhoneNumber struct {
+	Prefix string `json:"prefix"`
+	Number string `json:"number"`
+}
+
+type Address struct {
+	Country      string `json:"country"`
+	City         string `json:"city"`
+	Street       string `json:"street"`
+	StreetNumber string `json:"streetNumber"`
+	ZipCode      string `json:"zipCode"`
+}
+
+type Payment struct {
+	Amount         float64 `json:"amount"`
+	Currency       string  `json:"currency"`
+	PaidAt         string  `json:"paidAt"`
+	PaymentMethod  string  `json:"paymentMethod,omitempty"`
+	TransactionRef string  `json:"transactionRef,omitempty"`
+}
+
+type Membership struct {
+	ID        int64   `json:"id"`
+	Number    int64   `json:"number"`
+	Status    string  `json:"status"`
+	ValidFrom string  `json:"validFrom"`
+	ExpiresAt string  `json:"expiresAt"`
+	Payment   Payment `json:"payment"`
+}
+
+type RentedFacility struct {
+	ID                 int64   `json:"id"`
+	FacilityIdentifier string  `json:"facilityIdentifier"`
+	FacilityName       string  `json:"facilityName"`
+	RentedAt           string  `json:"rentedAt"`
+	ExpiresAt          string  `json:"expiresAt"`
+	Payment            Payment `json:"payment,omitempty"`
+}
+
 type Member struct {
-	ID    string `json:"id"`
+	ID               int64            `json:"id"`
+	FirstName        string           `json:"firstName"`
+	LastName         string           `json:"lastName"`
+	Email            string           `json:"email"`
+	BirthDate        string           `json:"birthDate"`
+	PhoneNumbers     []PhoneNumber    `json:"phoneNumbers"`
+	Addresses        []Address        `json:"addresses"`
+	Memberships      []Membership     `json:"memberships"`
+	RentedFacilities []RentedFacility `json:"rentedFacilities,omitempty"`
+}
+
+type MemberSummary struct {
+	ID    int64  `json:"id"`
 	Name  string `json:"name"`
 	Email string `json:"email"`
 }

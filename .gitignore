@@ -35,3 +35,4 @@ go.work.sum
 .zed
 main/tmp/
 main/.air.toml
+bin/
