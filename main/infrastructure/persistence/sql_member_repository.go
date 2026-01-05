@@ -49,7 +49,7 @@ func (r *SQLMemberRepository) GetAllMembers() result.Result[[]m.Member] {
 			&resultRow.MembershipStatus,
 			&resultRow.ExclusionDeliberatedAt,
 			&resultRow.ExcludedAt,
-			&resultRow.PhoneNumbers,
+			&resultRow.PaidAt,
 			&resultRow.Addresses,
 		)
 		if err != nil {
@@ -79,8 +79,6 @@ func (r *SQLMemberRepository) GetMemberById(id domain.Id[m.Member]) result.Resul
 		&resultRow.LastName,
 		&resultRow.DateOfBirth,
 		&resultRow.Email,
-		&resultRow.PhoneNumbers,
-		&resultRow.Addresses,
 		&resultRow.Memberships,
 		&resultRow.RentedServices,
 	)

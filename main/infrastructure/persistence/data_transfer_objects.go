@@ -23,6 +23,7 @@ type GetAllMembersQueryResult struct {
 	LastName               string          `json:"last_name"`
 	DateOfBirth            time.Time       `json:"date_of_birth"`
 	Email                  string          `json:"email"`
+	Addresses              json.RawMessage `json:"addresses"`
 	MembershipID           *int64          `json:"membership_id"`
 	MembershipNumber       *int64          `json:"membership_number"`
 	MembershipPeriodID     *int64          `json:"membership_period_id"`
@@ -31,6 +32,5 @@ type GetAllMembersQueryResult struct {
 	MembershipStatus       *string         `json:"membership_status"`
 	ExclusionDeliberatedAt *time.Time      `json:"exclusion_deliberated_at"`
 	ExcludedAt             *time.Time      `json:"excluded_at"`
-	PhoneNumbers           json.RawMessage `json:"phone_numbers"`
-	Addresses              json.RawMessage `json:"addresses"`
+	PaidAt                 *time.Time      `json:"paid_at"`
 }

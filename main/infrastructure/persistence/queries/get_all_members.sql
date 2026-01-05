@@ -14,20 +14,7 @@ SELECT
     ms.status           AS membership_status,
     mp.exclusion_deliberated_at,
     mp.excluded_at,
-
-    COALESCE(
-        (
-            SELECT json_agg(
-                jsonb_build_object(
-                    'prefix', pn.description,
-                    'number', pn.number
-                )
-            )
-            FROM phone_numbers pn
-            WHERE pn.member_id = m.id
-        ),
-        '[]'::json
-    ) AS phone_numbers,
+    p.paid_at,
 
     COALESCE(
         (
@@ -72,4 +59,6 @@ LEFT JOIN membership_periods mp
     ON mp.id = latest.period_id
 LEFT JOIN membership_statuses ms
     ON ms.id = mp.status_id
-ORDER BY m.last_name, m.first_name;
+LEFT JOIN payments p
+    ON p.membership_period_id = mp.id
+ORDER BY m.last_name, m.first_name

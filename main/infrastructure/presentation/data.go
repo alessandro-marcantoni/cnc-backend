@@ -39,7 +39,7 @@ type RentedFacility struct {
 	Payment            Payment `json:"payment,omitempty"`
 }
 
-type Member struct {
+type MemberDetails struct {
 	ID               int64            `json:"id"`
 	FirstName        string           `json:"firstName"`
 	LastName         string           `json:"lastName"`
@@ -49,6 +49,16 @@ type Member struct {
 	Addresses        []Address        `json:"addresses"`
 	Memberships      []Membership     `json:"memberships"`
 	RentedFacilities []RentedFacility `json:"rentedFacilities,omitempty"`
+}
+
+type Member struct {
+	ID          int64      `json:"id"`
+	FirstName   string     `json:"firstName"`
+	LastName    string     `json:"lastName"`
+	Email       string     `json:"email"`
+	BirthDate   string     `json:"birthDate"`
+	Addresses   []Address  `json:"addresses"`
+	Memberships Membership `json:"membership"`
 }
 
 type MemberSummary struct {

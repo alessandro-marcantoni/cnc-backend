@@ -70,14 +70,13 @@ func ConvertMemberToPresentation(domainMember membership.Member) Member {
 	}
 
 	return Member{
-		ID:           domainMember.User.Id.Value,
-		FirstName:    domainMember.User.FirstName,
-		LastName:     domainMember.User.LastName,
-		Email:        domainMember.User.Email.Value,
-		BirthDate:    birthDate,
-		PhoneNumbers: phoneNumbers,
-		Addresses:    addresses,
-		Memberships:  []Membership{membership},
+		ID:          domainMember.User.Id.Value,
+		FirstName:   domainMember.User.FirstName,
+		LastName:    domainMember.User.LastName,
+		Email:       domainMember.User.Email.Value,
+		BirthDate:   birthDate,
+		Addresses:   addresses,
+		Memberships: membership,
 	}
 }
 

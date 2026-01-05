@@ -135,22 +135,6 @@ func MapToStructs(queryResult GetMemberByIdQueryResult) result.Result[membership
 }
 
 func MapToMemberFromAllMembersQuery(queryResult GetAllMembersQueryResult) result.Result[membership.Member] {
-	// Unmarshal phone numbers with intermediate struct
-	var phoneNumbersRaw []struct {
-		Prefix *string `json:"prefix"`
-		Number string  `json:"number"`
-	}
-	if err := json.Unmarshal(queryResult.PhoneNumbers, &phoneNumbersRaw); err != nil {
-		return result.Err[membership.Member](err)
-	}
-	phoneNumbers := make([]membership.PhoneNumber, len(phoneNumbersRaw))
-	for i, pn := range phoneNumbersRaw {
-		phoneNumbers[i] = membership.PhoneNumber{
-			Prefix: pn.Prefix,
-			Number: pn.Number,
-		}
-	}
-
 	// Unmarshal addresses with intermediate struct
 	var addressesRaw []struct {
 		Country      string `json:"country"`
@@ -180,17 +164,17 @@ func MapToMemberFromAllMembersQuery(queryResult GetAllMembersQueryResult) result
 	var membershipStatus membership.MembershipInfo
 	if queryResult.ExpiresAt != nil && queryResult.ValidFrom != nil {
 		switch {
-		case queryResult.MembershipStatus != nil && *queryResult.MembershipStatus == "Active":
+		case queryResult.MembershipStatus != nil && *queryResult.MembershipStatus == "ACTIVE" && queryResult.PaidAt != nil:
 			membershipStatus = membership.Active{
 				ValidFromDate:  *queryResult.ValidFrom,
 				ValidUntilDate: *queryResult.ExpiresAt,
 			}
-		case queryResult.MembershipStatus != nil && *queryResult.MembershipStatus == "Expired":
-			membershipStatus = membership.Expired{
+		case queryResult.MembershipStatus != nil && *queryResult.MembershipStatus == "ACTIVE":
+			membershipStatus = membership.Unpaid{
 				ValidFromDate:  *queryResult.ValidFrom,
 				ValidUntilDate: *queryResult.ExpiresAt,
 			}
-		case queryResult.MembershipStatus != nil && *queryResult.MembershipStatus == "ExclusionDeliberated":
+		case queryResult.MembershipStatus != nil && *queryResult.MembershipStatus == "EXCLUSION_DELIBERATED":
 			deliberatedAt := time.Time{}
 			if queryResult.ExclusionDeliberatedAt != nil {
 				deliberatedAt = *queryResult.ExclusionDeliberatedAt
@@ -200,7 +184,7 @@ func MapToMemberFromAllMembersQuery(queryResult GetAllMembersQueryResult) result
 				ValidUntilDate: *queryResult.ExpiresAt,
 				DecisionDate:   deliberatedAt,
 			}
-		case queryResult.MembershipStatus != nil && *queryResult.MembershipStatus == "Excluded":
+		case queryResult.MembershipStatus != nil && *queryResult.MembershipStatus == "EXCLUDED":
 			excludedAt := time.Time{}
 			if queryResult.ExcludedAt != nil {
 				excludedAt = *queryResult.ExcludedAt
@@ -241,7 +225,7 @@ func MapToMemberFromAllMembersQuery(queryResult GetAllMembersQueryResult) result
 			BirthDate:    queryResult.DateOfBirth,
 			Email:        membership.EmailAddress{Value: queryResult.Email},
 			Addresses:    addresses,
-			PhoneNumbers: phoneNumbers,
+			PhoneNumbers: []membership.PhoneNumber{},
 		},
 		Membership: domainMembership,
 	})

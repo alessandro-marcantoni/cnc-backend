@@ -24,10 +24,10 @@ type MembershipInfo interface {
 type MembershipStatus string
 
 const (
-	MembershipStatusActive               MembershipStatus = "Active"
-	MembershipStatusUnpaid               MembershipStatus = "Unpaid"
-	MembershipStatusExclusionDeliberated MembershipStatus = "ExclusionDeliberated"
-	MembershipStatusExcluded             MembershipStatus = "Excluded"
+	MembershipStatusActive               MembershipStatus = "ACTIVE"
+	MembershipStatusUnpaid               MembershipStatus = "UNPAID"
+	MembershipStatusExclusionDeliberated MembershipStatus = "EXCLUSION_DELIBERATED"
+	MembershipStatusExcluded             MembershipStatus = "EXCLUDED"
 )
 
 type Active struct {

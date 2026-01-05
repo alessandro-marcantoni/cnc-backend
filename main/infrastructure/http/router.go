@@ -11,5 +11,6 @@ func NewRouter() http.Handler {
 	mux.HandleFunc("/api/v1.0/members", MembersHandler)
 	mux.HandleFunc("/api/v1.0/members/", MemberByIDHandler)
 
-	return withMiddleware(mux)
+	router := cors(mux)
+	return withMiddleware(router)
 }
