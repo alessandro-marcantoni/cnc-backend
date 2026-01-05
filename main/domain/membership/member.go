@@ -12,6 +12,11 @@ type Member struct {
 	Membership Membership
 }
 
+type MemberDetails struct {
+	User
+	Memberships []Membership
+}
+
 func (m Member) IsActive() bool {
 	return m.Membership.Status.GetStatus() == MembershipStatusActive
 }

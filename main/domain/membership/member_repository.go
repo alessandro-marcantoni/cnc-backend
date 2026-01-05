@@ -7,7 +7,7 @@ import (
 
 type MemberRepository interface {
 	GetAllMembers() result.Result[[]Member]
-	GetMemberById(id domain.Id[Member]) result.Result[Member]
+	GetMemberById(id domain.Id[Member]) result.Result[MemberDetails]
 	GetMembersWhoDidNotPayForServices() []Member
 	GetMembersWhoDidNotPayForMembership() []Member
 }

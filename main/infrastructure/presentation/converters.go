@@ -18,9 +18,9 @@ func WriteError(w http.ResponseWriter, status int, msg string) {
 	WriteJSON(w, status, map[string]string{"error": msg})
 }
 
-func ConvertMemberToPresentation(domainMember membership.Member) Member {
-	phoneNumbers := make([]PhoneNumber, len(domainMember.User.PhoneNumbers))
-	for i, pn := range domainMember.User.PhoneNumbers {
+func convertPhoneNumbersToPresentation(numbers []membership.PhoneNumber) []PhoneNumber {
+	phoneNumbers := make([]PhoneNumber, len(numbers))
+	for i, pn := range numbers {
 		prefix := ""
 		if pn.Prefix != nil {
 			prefix = *pn.Prefix
@@ -30,9 +30,12 @@ func ConvertMemberToPresentation(domainMember membership.Member) Member {
 			Number: pn.Number,
 		}
 	}
+	return phoneNumbers
+}
 
-	addresses := make([]Address, len(domainMember.User.Addresses))
-	for i, addr := range domainMember.User.Addresses {
+func convertAddressesToPresentation(a []membership.Address) []Address {
+	addresses := make([]Address, len(a))
+	for i, addr := range a {
 		zipCode := ""
 		if addr.ZipCode != nil {
 			zipCode = *addr.ZipCode
@@ -45,38 +48,51 @@ func ConvertMemberToPresentation(domainMember membership.Member) Member {
 			ZipCode:      zipCode,
 		}
 	}
+	return addresses
+}
 
-	// Convert the current membership
+func convertMembershipToPresentation(m membership.Membership) Membership {
 	membership := Membership{
-		ID:        domainMember.Membership.Number.Value,
-		Number:    domainMember.Membership.Number.Value,
-		Status:    string(domainMember.Membership.Status.GetStatus()),
-		ValidFrom: domainMember.Membership.Status.GetValidFromDate().Format("2006-01-02"),
-		ExpiresAt: domainMember.Membership.Status.GetValidUntilDate().Format("2006-01-02"),
+		ID:        m.Number.Value,
+		Number:    m.Number.Value,
+		Status:    string(m.Status.GetStatus()),
+		ValidFrom: m.Status.GetValidFromDate().Format("2006-01-02"),
+		ExpiresAt: m.Status.GetValidUntilDate().Format("2006-01-02"),
 		Payment: Payment{
-			Amount:   domainMember.Membership.Payment.GetAmount(),
+			Amount:   m.Payment.GetAmount(),
 			Currency: "EUR", // Default currency
 		},
 	}
-
 	// Set payment date if available
-	if paidAt := domainMember.Membership.Payment.GetPaidAt(); !paidAt.IsZero() {
+	if paidAt := m.Payment.GetPaidAt(); !paidAt.IsZero() {
 		membership.Payment.PaidAt = paidAt.Format("2006-01-02T15:04:05Z07:00")
 	}
 
+	return membership
+}
+
+func convertMembershipsToPresentation(memberships []membership.Membership) []Membership {
+	presentationMemberships := make([]Membership, len(memberships))
+	for i, m := range memberships {
+		presentationMemberships[i] = convertMembershipToPresentation(m)
+	}
+	return presentationMemberships
+}
+
+func ConvertMemberToPresentation(domainMember membership.Member) Member {
 	birthDate := ""
 	if !domainMember.User.BirthDate.IsZero() {
 		birthDate = domainMember.User.BirthDate.Format("2006-01-02")
 	}
 
 	return Member{
-		ID:          domainMember.User.Id.Value,
-		FirstName:   domainMember.User.FirstName,
-		LastName:    domainMember.User.LastName,
-		Email:       domainMember.User.Email.Value,
-		BirthDate:   birthDate,
-		Addresses:   addresses,
-		Memberships: membership,
+		ID:         domainMember.User.Id.Value,
+		FirstName:  domainMember.User.FirstName,
+		LastName:   domainMember.User.LastName,
+		Email:      domainMember.User.Email.Value,
+		BirthDate:  birthDate,
+		Addresses:  convertAddressesToPresentation(domainMember.Addresses),
+		Membership: convertMembershipToPresentation(domainMember.Membership),
 	}
 }
 
@@ -86,6 +102,24 @@ func ConvertMembersToPresentation(domainMembers []membership.Member) []Member {
 		presentationMembers[i] = ConvertMemberToPresentation(dm)
 	}
 	return presentationMembers
+}
+
+func ConvertMemberDetailsToPresentation(domainMember membership.MemberDetails) MemberDetails {
+	birthDate := ""
+	if !domainMember.User.BirthDate.IsZero() {
+		birthDate = domainMember.User.BirthDate.Format("2006-01-02")
+	}
+
+	return MemberDetails{
+		ID:           domainMember.User.Id.Value,
+		FirstName:    domainMember.User.FirstName,
+		LastName:     domainMember.User.LastName,
+		Email:        domainMember.User.Email.Value,
+		BirthDate:    birthDate,
+		PhoneNumbers: convertPhoneNumbersToPresentation(domainMember.PhoneNumbers),
+		Addresses:    convertAddressesToPresentation(domainMember.Addresses),
+		Memberships:  convertMembershipsToPresentation(domainMember.Memberships),
+	}
 }
 
 func ConvertMemberToSummary(domainMember membership.Member) MemberSummary {

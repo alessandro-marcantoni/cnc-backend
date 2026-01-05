@@ -84,11 +84,8 @@ func MemberByIDHandler(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		member := presentation.ConvertMemberToPresentation(result.Value())
+		member := presentation.ConvertMemberDetailsToPresentation(result.Value())
 		presentation.WriteJSON(w, http.StatusOK, member)
-
-	case http.MethodDelete:
-		w.WriteHeader(http.StatusNoContent)
 
 	default:
 		w.WriteHeader(http.StatusMethodNotAllowed)

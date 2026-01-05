@@ -46,15 +46,15 @@ func (pt *PgTimestamp) UnmarshalJSON(b []byte) error {
 	return err
 }
 
-func MapToStructs(queryResult GetMemberByIdQueryResult) result.Result[membership.Member] {
+func MapToMemberFromMemberByIdQuery(queryResult GetMemberByIdQueryResult) result.Result[membership.MemberDetails] {
 	var phoneNumbers []membership.PhoneNumber
 	if err := json.Unmarshal(queryResult.PhoneNumbers, &phoneNumbers); err != nil {
-		return result.Err[membership.Member](err)
+		return result.Err[membership.MemberDetails](err)
 	}
 
 	var addresses []membership.Address
 	if err := json.Unmarshal(queryResult.Addresses, &addresses); err != nil {
-		return result.Err[membership.Member](err)
+		return result.Err[membership.MemberDetails](err)
 	}
 
 	var memberships []struct {
@@ -73,25 +73,7 @@ func MapToStructs(queryResult GetMemberByIdQueryResult) result.Result[membership
 		} `json:"payment"`
 	}
 	if err := json.Unmarshal(queryResult.Memberships, &memberships); err != nil {
-		return result.Err[membership.Member](err)
-	}
-
-	var rentedServices []struct {
-		RentedFacilityID   int64       `json:"rented_facility_id"`
-		FacilityIdentifier string      `json:"facility_identifier"`
-		FacilityName       string      `json:"facility_name"`
-		RentedAt           PgTimestamp `json:"rented_at"`
-		ExpiresAt          PgTimestamp `json:"expires_at"`
-		Payment            struct {
-			Amount         float64     `json:"amount"`
-			Currency       string      `json:"currency"`
-			PaidAt         PgTimestamp `json:"paid_at"`
-			PaymentMethod  string      `json:"payment_method"`
-			TransactionRef string      `json:"transaction_ref"`
-		} `json:"payment"`
-	}
-	if err := json.Unmarshal(queryResult.RentedServices, &rentedServices); err != nil {
-		return result.Err[membership.Member](err)
+		return result.Err[membership.MemberDetails](err)
 	}
 
 	// Map memberships and rented services to domain structs
@@ -120,7 +102,7 @@ func MapToStructs(queryResult GetMemberByIdQueryResult) result.Result[membership
 		})
 	}
 
-	return result.Ok(membership.Member{
+	return result.Ok(membership.MemberDetails{
 		User: membership.User{
 			Id:           domain.Id[membership.User]{Value: queryResult.MemberID},
 			FirstName:    queryResult.FirstName,
@@ -130,7 +112,7 @@ func MapToStructs(queryResult GetMemberByIdQueryResult) result.Result[membership
 			Addresses:    addresses,
 			PhoneNumbers: phoneNumbers,
 		},
-		Membership: domainMemberships[0], // Assuming one membership for simplicity
+		Memberships: domainMemberships, // Assuming one membership for simplicity
 	})
 }
 

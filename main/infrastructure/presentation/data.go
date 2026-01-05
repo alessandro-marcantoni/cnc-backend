@@ -40,25 +40,24 @@ type RentedFacility struct {
 }
 
 type MemberDetails struct {
-	ID               int64            `json:"id"`
-	FirstName        string           `json:"firstName"`
-	LastName         string           `json:"lastName"`
-	Email            string           `json:"email"`
-	BirthDate        string           `json:"birthDate"`
-	PhoneNumbers     []PhoneNumber    `json:"phoneNumbers"`
-	Addresses        []Address        `json:"addresses"`
-	Memberships      []Membership     `json:"memberships"`
-	RentedFacilities []RentedFacility `json:"rentedFacilities,omitempty"`
+	ID           int64         `json:"id"`
+	FirstName    string        `json:"firstName"`
+	LastName     string        `json:"lastName"`
+	Email        string        `json:"email"`
+	BirthDate    string        `json:"birthDate"`
+	PhoneNumbers []PhoneNumber `json:"phoneNumbers"`
+	Addresses    []Address     `json:"addresses"`
+	Memberships  []Membership  `json:"memberships"`
 }
 
 type Member struct {
-	ID          int64      `json:"id"`
-	FirstName   string     `json:"firstName"`
-	LastName    string     `json:"lastName"`
-	Email       string     `json:"email"`
-	BirthDate   string     `json:"birthDate"`
-	Addresses   []Address  `json:"addresses"`
-	Memberships Membership `json:"membership"`
+	ID         int64      `json:"id"`
+	FirstName  string     `json:"firstName"`
+	LastName   string     `json:"lastName"`
+	Email      string     `json:"email"`
+	BirthDate  string     `json:"birthDate"`
+	Addresses  []Address  `json:"addresses"`
+	Membership Membership `json:"membership"`
 }
 
 type MemberSummary struct {

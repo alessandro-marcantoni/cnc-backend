@@ -17,7 +17,7 @@ func (this MemberManagementService) GetUpdatedListOfMembers() result.Result[[]Me
 	return this.repository.GetAllMembers()
 }
 
-func (this MemberManagementService) GetMemberById(id domain.Id[Member]) result.Result[Member] {
+func (this MemberManagementService) GetMemberById(id domain.Id[Member]) result.Result[MemberDetails] {
 	return this.repository.GetMemberById(id)
 }
 

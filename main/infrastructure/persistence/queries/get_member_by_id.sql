@@ -16,24 +16,6 @@ WITH membership_details AS (
     JOIN membership_statuses ms ON mp.status_id = ms.id
     LEFT JOIN payments p ON mp.id = p.membership_period_id
     WHERE m.member_id = $1
-),
-rented_services AS (
-    SELECT
-        rf.id AS rented_facility_id,
-        f.identifier AS facility_identifier,
-        fc.name AS facility_name,
-        rf.rented_at,
-        rf.expires_at,
-        p.amount AS payment_amount,
-        p.currency AS payment_currency,
-        p.paid_at AS payment_date,
-        p.payment_method,
-        p.transaction_ref
-    FROM rented_facilities rf
-    JOIN facilities f ON rf.facility_id = f.id
-    JOIN facilities_catalog fc ON f.facility_type_id = fc.id
-    LEFT JOIN payments p ON rf.id = p.rented_facility_id
-    WHERE rf.member_id = $1
 )
 SELECT
     m.id AS member_id,
@@ -65,25 +47,10 @@ SELECT
             'payment_method', md.payment_method,
             'transaction_ref', md.transaction_ref
         )
-    )) AS memberships,
-    json_agg(DISTINCT jsonb_build_object(
-        'rented_facility_id', rs.rented_facility_id,
-        'facility_identifier', rs.facility_identifier,
-        'facility_name', rs.facility_name,
-        'rented_at', rs.rented_at,
-        'expires_at', rs.expires_at,
-        'payment', jsonb_build_object(
-            'amount', rs.payment_amount,
-            'currency', rs.payment_currency,
-            'paid_at', rs.payment_date,
-            'payment_method', rs.payment_method,
-            'transaction_ref', rs.transaction_ref
-        )
-    )) AS rented_services
+    )) AS memberships
 FROM members m
 LEFT JOIN phone_numbers pn ON m.id = pn.member_id
 LEFT JOIN addresses a ON m.id = a.member_id
 LEFT JOIN membership_details md ON m.id = md.membership_id
-LEFT JOIN rented_services rs ON m.id = rs.rented_facility_id
 WHERE m.id = $1
 GROUP BY m.id;
