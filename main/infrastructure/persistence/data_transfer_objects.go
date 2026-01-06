@@ -33,3 +33,19 @@ type GetAllMembersQueryResult struct {
 	ExcludedAt             *time.Time      `json:"excluded_at"`
 	PaidAt                 *time.Time      `json:"paid_at"`
 }
+
+type GetRentedFacilitiesByMemberQueryResult struct {
+	RentedFacilityID   int64     `json:"rented_facility_id"`
+	RentedAt           time.Time `json:"rented_at"`
+	ExpiresAt          time.Time `json:"expires_at"`
+	FacilityID         int64     `json:"facility_id"`
+	FacilityIdentifier string    `json:"facility_identifier"`
+	FacilityTypeID     int64     `json:"facility_type_id"`
+	FacilityType       string    `json:"facility_type"`
+	FacilityTypeDesc   string    `json:"facility_type_description"`
+	SuggestedPrice     float64   `json:"suggested_price"`
+	BoatID             *int64    `json:"boat_id"`
+	BoatName           *string   `json:"boat_name"`
+	LengthMeters       *float64  `json:"length_meters"`
+	WidthMeters        *float64  `json:"width_meters"`
+}

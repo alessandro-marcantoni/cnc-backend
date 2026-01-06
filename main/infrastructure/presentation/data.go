@@ -30,13 +30,21 @@ type Membership struct {
 	Payment   Payment `json:"payment"`
 }
 
+type BoatInfo struct {
+	Name         string  `json:"name"`
+	LengthMeters float64 `json:"lengthMeters"`
+	WidthMeters  float64 `json:"widthMeters"`
+}
+
 type RentedFacility struct {
-	ID                 int64   `json:"id"`
-	FacilityIdentifier string  `json:"facilityIdentifier"`
-	FacilityName       string  `json:"facilityName"`
-	RentedAt           string  `json:"rentedAt"`
-	ExpiresAt          string  `json:"expiresAt"`
-	Payment            Payment `json:"payment,omitempty"`
+	ID                      int64     `json:"id"`
+	FacilityID              int64     `json:"facilityId"`
+	FacilityIdentifier      string    `json:"facilityIdentifier"`
+	FacilityName            string    `json:"facilityName"`
+	FacilityTypeDescription string    `json:"facilityTypeDescription"`
+	RentedAt                string    `json:"rentedAt"`
+	ExpiresAt               string    `json:"expiresAt"`
+	BoatInfo                *BoatInfo `json:"boatInfo,omitempty"`
 }
 
 type MemberDetails struct {

@@ -15,11 +15,13 @@ import (
 
 var (
 	memberService *membership.MemberManagementService
+	facilityRepo  *persistence.SQLFacilityRepository
 )
 
 func InitializeServices(db *sql.DB) {
 	memberRepository := persistence.NewSQLMemberRepository(db)
 	memberService = membership.NewMemberManagementService(memberRepository)
+	facilityRepo = persistence.NewSQLFacilityRepository(db)
 }
 
 func HealthHandler(w http.ResponseWriter, r *http.Request) {
@@ -90,4 +92,62 @@ func MemberByIDHandler(w http.ResponseWriter, r *http.Request) {
 	default:
 		w.WriteHeader(http.StatusMethodNotAllowed)
 	}
+}
+
+func RentedFacilitiesHandler(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodGet {
+		w.WriteHeader(http.StatusMethodNotAllowed)
+		return
+	}
+
+	if facilityRepo == nil {
+		presentation.WriteError(w, http.StatusInternalServerError, "service not initialized")
+		return
+	}
+
+	// Get member_id from query parameter
+	memberIdStr := r.URL.Query().Get("member_id")
+	if memberIdStr == "" {
+		presentation.WriteError(w, http.StatusBadRequest, "missing member_id query parameter")
+		return
+	}
+
+	memberId, err := strconv.ParseInt(memberIdStr, 10, 64)
+	if err != nil {
+		presentation.WriteError(w, http.StatusBadRequest, "invalid member_id format")
+		return
+	}
+
+	// Get DTOs from repository
+	dtos, err := facilityRepo.GetRentedFacilityDTOs(memberId)
+	if err != nil {
+		presentation.WriteError(w, http.StatusInternalServerError, "failed to retrieve rented facilities")
+		return
+	}
+
+	// Convert DTOs to presentation models
+	rentedFacilities := make([]presentation.RentedFacility, len(dtos))
+	for i, dto := range dtos {
+		var boatInfo *presentation.BoatInfo
+		if dto.BoatID != nil && dto.BoatName != nil && dto.LengthMeters != nil && dto.WidthMeters != nil {
+			boatInfo = &presentation.BoatInfo{
+				Name:         *dto.BoatName,
+				LengthMeters: *dto.LengthMeters,
+				WidthMeters:  *dto.WidthMeters,
+			}
+		}
+
+		rentedFacilities[i] = presentation.RentedFacility{
+			ID:                      dto.RentedFacilityID,
+			FacilityID:              dto.FacilityID,
+			FacilityIdentifier:      dto.FacilityIdentifier,
+			FacilityName:            dto.FacilityType,
+			FacilityTypeDescription: dto.FacilityTypeDesc,
+			RentedAt:                dto.RentedAt.Format("2006-01-02T15:04:05Z07:00"),
+			ExpiresAt:               dto.ExpiresAt.Format("2006-01-02"),
+			BoatInfo:                boatInfo,
+		}
+	}
+
+	presentation.WriteJSON(w, http.StatusOK, rentedFacilities)
 }

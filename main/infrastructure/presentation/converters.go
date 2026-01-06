@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"net/http"
 
+	facilityrental "github.com/alessandro-marcantoni/cnc-backend/main/domain/facility_rental"
 	"github.com/alessandro-marcantoni/cnc-backend/main/domain/membership"
 )
 
@@ -128,4 +129,30 @@ func ConvertMemberToSummary(domainMember membership.Member) MemberSummary {
 		Name:  fmt.Sprintf("%s %s", domainMember.User.FirstName, domainMember.User.LastName),
 		Email: domainMember.User.Email.Value,
 	}
+}
+
+func ConvertRentedFacilityToPresentation(rf facilityrental.RentedFacility, facilityIdentifier, facilityTypeName, facilityTypeDesc string, rentedAt string) RentedFacility {
+	rentedFacility := RentedFacility{
+		ID:                      rf.GetId().Value,
+		FacilityID:              rf.GetFacility().Value,
+		FacilityIdentifier:      facilityIdentifier,
+		FacilityName:            facilityTypeName,
+		FacilityTypeDescription: facilityTypeDesc,
+		RentedAt:                rentedAt,
+		ExpiresAt:               rf.GetValidity().ToDate.Format("2006-01-02"),
+		BoatInfo:                nil,
+	}
+
+	// Check if this is a boat facility
+	if rf.GetType() == facilityrental.BoatFacility {
+		if rfWithBoat, ok := rf.(facilityrental.RentedFacilityWithBoat); ok {
+			rentedFacility.BoatInfo = &BoatInfo{
+				Name:         rfWithBoat.BoatInfo.Name,
+				LengthMeters: rfWithBoat.BoatInfo.LengthMeters,
+				WidthMeters:  rfWithBoat.BoatInfo.WidthMeters,
+			}
+		}
+	}
+
+	return rentedFacility
 }
