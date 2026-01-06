@@ -44,6 +44,7 @@ type RentedFacility struct {
 	FacilityTypeDescription string    `json:"facilityTypeDescription"`
 	RentedAt                string    `json:"rentedAt"`
 	ExpiresAt               string    `json:"expiresAt"`
+	Payment                 *Payment  `json:"payment"`
 	BoatInfo                *BoatInfo `json:"boatInfo,omitempty"`
 }
 

@@ -52,6 +52,12 @@ func (r *SQLFacilityRepository) GetFacilitiesRentedByMember(memberId domain.Id[m
 			&dto.BoatName,
 			&dto.LengthMeters,
 			&dto.WidthMeters,
+			&dto.PaymentID,
+			&dto.PaymentAmount,
+			&dto.PaymentCurrency,
+			&dto.PaymentPaidAt,
+			&dto.PaymentMethod,
+			&dto.TransactionRef,
 		)
 		if err != nil {
 			continue
@@ -94,6 +100,12 @@ func (r *SQLFacilityRepository) GetRentedFacilityDTOs(memberId int64) ([]GetRent
 			&dto.BoatName,
 			&dto.LengthMeters,
 			&dto.WidthMeters,
+			&dto.PaymentID,
+			&dto.PaymentAmount,
+			&dto.PaymentCurrency,
+			&dto.PaymentPaidAt,
+			&dto.PaymentMethod,
+			&dto.TransactionRef,
 		)
 		if err != nil {
 			continue

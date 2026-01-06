@@ -137,6 +137,26 @@ func RentedFacilitiesHandler(w http.ResponseWriter, r *http.Request) {
 			}
 		}
 
+		var payment *presentation.Payment
+		if dto.PaymentID != nil && dto.PaymentAmount != nil {
+			payment = &presentation.Payment{
+				Amount:   *dto.PaymentAmount,
+				Currency: "EUR", // Default currency
+			}
+			if dto.PaymentCurrency != nil {
+				payment.Currency = *dto.PaymentCurrency
+			}
+			if dto.PaymentPaidAt != nil {
+				payment.PaidAt = dto.PaymentPaidAt.Format("2006-01-02T15:04:05Z07:00")
+			}
+			if dto.PaymentMethod != nil {
+				payment.PaymentMethod = *dto.PaymentMethod
+			}
+			if dto.TransactionRef != nil {
+				payment.TransactionRef = *dto.TransactionRef
+			}
+		}
+
 		rentedFacilities[i] = presentation.RentedFacility{
 			ID:                      dto.RentedFacilityID,
 			FacilityID:              dto.FacilityID,
@@ -145,6 +165,7 @@ func RentedFacilitiesHandler(w http.ResponseWriter, r *http.Request) {
 			FacilityTypeDescription: dto.FacilityTypeDesc,
 			RentedAt:                dto.RentedAt.Format("2006-01-02T15:04:05Z07:00"),
 			ExpiresAt:               dto.ExpiresAt.Format("2006-01-02"),
+			Payment:                 payment,
 			BoatInfo:                boatInfo,
 		}
 	}
