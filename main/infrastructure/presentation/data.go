@@ -45,7 +45,7 @@ type RentedFacility struct {
 	RentedAt                string    `json:"rentedAt"`
 	ExpiresAt               string    `json:"expiresAt"`
 	Payment                 *Payment  `json:"payment"`
-	BoatInfo                *BoatInfo `json:"boatInfo,omitempty"`
+	BoatInfo                *BoatInfo `json:"boatInfo"`
 }
 
 type MemberDetails struct {

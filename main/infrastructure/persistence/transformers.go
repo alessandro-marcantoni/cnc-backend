@@ -59,6 +59,7 @@ func MapToMemberFromMemberByIdQuery(queryResult GetMemberByIdQueryResult) result
 
 	var memberships []struct {
 		MembershipID           int64        `json:"membership_id"`
+		MembershipNumber       int64        `json:"membership_number"`
 		ValidFrom              PgTimestamp  `json:"valid_from"`
 		ExpiresAt              PgTimestamp  `json:"expires_at"`
 		Status                 string       `json:"status"`
@@ -93,7 +94,8 @@ func MapToMemberFromMemberByIdQuery(queryResult GetMemberByIdQueryResult) result
 		}
 
 		domainMemberships = append(domainMemberships, membership.Membership{
-			Number: domain.Id[membership.Membership]{Value: m.MembershipID},
+			Id:     domain.Id[membership.Membership]{Value: m.MembershipID},
+			Number: m.MembershipNumber,
 			Status: membership.Active{
 				ValidFromDate:  m.ValidFrom.Time,
 				ValidUntilDate: m.ExpiresAt.Time,
@@ -194,7 +196,8 @@ func MapToMemberFromAllMembersQuery(queryResult GetAllMembersQueryResult) result
 	}
 
 	domainMembership := membership.Membership{
-		Number:  domain.Id[membership.Membership]{Value: *queryResult.MembershipNumber},
+		Id:      domain.Id[membership.Membership]{Value: *queryResult.MembershipID},
+		Number:  *queryResult.MembershipNumber,
 		Status:  membershipStatus,
 		Payment: paymentInfo,
 	}

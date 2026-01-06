@@ -10,7 +10,8 @@ import (
 const SuggestedMembershipPrice float64 = 130.0
 
 type Membership struct {
-	Number  domain.Id[Membership]
+	Id      domain.Id[Membership]
+	Number  int64
 	Status  MembershipInfo
 	Payment payment.Payment
 }

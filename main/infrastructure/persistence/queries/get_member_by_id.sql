@@ -1,6 +1,7 @@
 WITH membership_details AS (
     SELECT
         m.id AS membership_id,
+        m.number AS membership_number,
         mp.valid_from,
         mp.expires_at,
         ms.status AS membership_status,
@@ -35,6 +36,7 @@ SELECT
     )) AS addresses,
     json_agg(DISTINCT jsonb_build_object(
         'membership_id', md.membership_id,
+        'membership_number', md.membership_number,
         'valid_from', md.valid_from,
         'expires_at', md.expires_at,
         'status', md.membership_status,

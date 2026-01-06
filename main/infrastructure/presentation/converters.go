@@ -54,8 +54,8 @@ func convertAddressesToPresentation(a []membership.Address) []Address {
 
 func convertMembershipToPresentation(m membership.Membership) Membership {
 	membership := Membership{
-		ID:        m.Number.Value,
-		Number:    m.Number.Value,
+		ID:        m.Id.Value,
+		Number:    m.Number,
 		Status:    string(m.Status.GetStatus()),
 		ValidFrom: m.Status.GetValidFromDate().Format("2006-01-02"),
 		ExpiresAt: m.Status.GetValidUntilDate().Format("2006-01-02"),
