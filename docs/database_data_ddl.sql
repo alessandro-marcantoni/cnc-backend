@@ -5,7 +5,7 @@ INSERT INTO members (first_name, last_name, date_of_birth, email)
 SELECT
     first_name, last_name, date_of_birth, email
 FROM (VALUES
-('Luca','Rossi',DATE '1985-03-12','luca.rossi@example.com'),
+('Alice','Rossi',DATE '2007-04-27','alice.rossi@example.com'),
 ('Giulia','Bianchi',DATE '1990-07-22','giulia.bianchi@example.com'),
 ('Marco','Verdi',DATE '1978-11-05','marco.verdi@example.com'),
 ('Francesca','Neri',DATE '1995-02-18','francesca.neri@example.com'),

@@ -1,0 +1,38 @@
+# Git
+.git
+.gitignore
+
+# Documentation
+README.md
+docs/
+
+# Tests
+test/
+
+# Build artifacts
+bin/
+*.out
+*.html
+
+# IDE
+.vscode/
+.idea/
+.zed/
+*.swp
+*.swo
+*~
+
+# Air (hot reload)
+.air.toml
+tmp/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Makefile
+Makefile
+
+# Compiled binaries
+main/main
+*.exe
