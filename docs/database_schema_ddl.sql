@@ -57,6 +57,19 @@ CREATE TABLE IF NOT EXISTS facilities (
 CREATE INDEX IF NOT EXISTS idx_facilities_type
 ON facilities(facility_type_id);
 
+
+-- =========================
+-- SEASONS
+-- =========================
+CREATE TABLE IF NOT EXISTS seasons (
+    id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+    code VARCHAR(20) NOT NULL UNIQUE,          -- e.g. '2025', '2025-2026'
+    name VARCHAR(100) NOT NULL,                -- e.g. 'Season 2025'
+    starts_at DATE NOT NULL,
+    ends_at   DATE NOT NULL,
+    CHECK (ends_at > starts_at)
+);
+
 -- =========================
 -- RENTED FACILITIES (HISTORY)
 -- =========================
@@ -66,6 +79,7 @@ CREATE TABLE IF NOT EXISTS rented_facilities (
     member_id BIGINT NOT NULL REFERENCES members(id),
     rented_at TIMESTAMP NOT NULL DEFAULT now(),
     expires_at TIMESTAMP NOT NULL,
+    season_id BIGINT NOT NULL REFERENCES seasons(id),
     CHECK (expires_at > rented_at)
 );
 
@@ -106,6 +120,7 @@ CREATE TABLE IF NOT EXISTS membership_periods (
         REFERENCES membership_statuses(id),
     exclusion_deliberated_at TIMESTAMP,
     excluded_at TIMESTAMP,
+    season_id BIGINT NOT NULL REFERENCES seasons(id),
     CHECK (expires_at > valid_from),
     UNIQUE (membership_id, valid_from)
 );
@@ -113,6 +128,9 @@ CREATE TABLE IF NOT EXISTS membership_periods (
 CREATE UNIQUE INDEX IF NOT EXISTS one_active_period_per_membership
 ON membership_periods(membership_id)
 WHERE status_id = 1;
+
+CREATE UNIQUE INDEX one_membership_per_season
+ON membership_periods (membership_id, season_id);
 
 CREATE INDEX IF NOT EXISTS idx_membership_periods_membership
 ON membership_periods(membership_id);

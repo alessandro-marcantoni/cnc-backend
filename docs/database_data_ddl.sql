@@ -79,7 +79,11 @@ FROM members;
 INSERT INTO facilities_catalog (name, description, suggested_price) VALUES
 ('Tennis Court','Outdoor clay court',25.00),
 ('Swimming Pool','Indoor 25m pool',15.00),
-('Boat Dock','Dock for small boats',50.00);
+('Boat Dock','Dock for small boats',50.00),
+('Gym','Indoor gym',30.00),
+('Basketball Court','Indoor basketball court',20.00),
+('Volleyball Court','Indoor volleyball court',25.00),
+('Ping Pong Table','Indoor ping pong table',15.00);
 
 -- =======================================
 -- FACILITIES
@@ -89,24 +93,45 @@ SELECT 1,'TC-'||id FROM generate_series(1,10) AS id
 UNION ALL
 SELECT 2,'SP-'||id FROM generate_series(1,5) AS id
 UNION ALL
-SELECT 3,'BD-'||id FROM generate_series(1,3) AS id;
+SELECT 3,'BD-'||id FROM generate_series(1,3) AS id
+UNION ALL
+SELECT 4,'GYM-'||id FROM generate_series(1,2) AS id
+UNION ALL
+SELECT 5,'BC-'||id FROM generate_series(1,2) AS id
+UNION ALL
+SELECT 6,'VC-'||id FROM generate_series(1,2) AS id
+UNION ALL
+SELECT 7,'PP-'||id FROM generate_series(1,8) AS id;
+
+-- =======================================
+-- SEASONS
+-- =======================================
+INSERT INTO seasons (code, name, starts_at, ends_at) VALUES
+('2025', 'Season 2025', '2025-04-01', '2026-03-31'),
+('2026', 'Season 2026', '2026-04-01', '2027-03-31'),
+('2027', 'Season 2027', '2027-04-01', '2028-03-31');
 
 -- =======================================
 -- RENTED FACILITIES
 -- =======================================
-INSERT INTO rented_facilities (facility_id, member_id, rented_at, expires_at)
+INSERT INTO rented_facilities (facility_id, member_id, rented_at, expires_at, season_id)
 SELECT
-  (id%18)+1,
+  (id%32)+1,
   id,
   now() - ((id%30) || ' days')::interval,
-  now() + (((id%10)+1) || ' days')::interval
+  now() + (((id%10)+1) || ' days')::interval,
+  CASE
+    WHEN now() - ((id%30) || ' days')::interval >= '2027-04-01' THEN 3
+    WHEN now() - ((id%30) || ' days')::interval >= '2026-04-01' THEN 2
+    ELSE 1
+  END
 FROM members;
 
 -- =======================================
 -- MEMBERSHIP STATUSES
 -- =======================================
 INSERT INTO membership_statuses (status) VALUES
-('active'),('expired'),('suspended');
+('ACTIVE'),('EXCLUSION_DELIBERATED'),('EXCLUDED');
 
 -- =======================================
 -- MEMBERSHIPS
@@ -118,13 +143,18 @@ FROM members;
 -- =======================================
 -- MEMBERSHIP PERIODS
 -- =======================================
-INSERT INTO membership_periods (membership_id, valid_from, expires_at, status_id)
+INSERT INTO membership_periods (membership_id, valid_from, expires_at, status_id, season_id)
 SELECT id,
        now() - ((id%400) || ' days')::interval,
        now() + ((id%100) || ' days')::interval,
-       CASE WHEN id%5=0 THEN 2 -- expired
-            WHEN id%7=0 THEN 3 -- suspended
-            ELSE 1 END
+       CASE WHEN id%5=0 THEN 2 -- excluded
+            WHEN id%7=0 THEN 3 -- exclusion_deliberated
+            ELSE 1 END,
+       CASE
+         WHEN now() - ((id%400) || ' days')::interval >= '2027-04-01' THEN 3
+         WHEN now() - ((id%400) || ' days')::interval >= '2026-04-01' THEN 2
+         ELSE 1
+       END
 FROM memberships;
 
 -- =======================================
