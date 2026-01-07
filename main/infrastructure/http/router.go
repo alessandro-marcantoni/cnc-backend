@@ -11,6 +11,7 @@ func NewRouter() http.Handler {
 	mux.HandleFunc("/api/v1.0/members", MembersHandler)
 	mux.HandleFunc("/api/v1.0/members/", MemberByIDHandler)
 	mux.HandleFunc("/api/v1.0/facilities/catalog", FacilitiesCatalogHandler)
+	mux.HandleFunc("/api/v1.0/facilities", FacilitiesByTypeHandler)
 	mux.HandleFunc("/api/v1.0/facilities/rented", RentedFacilitiesHandler)
 
 	router := cors(mux)

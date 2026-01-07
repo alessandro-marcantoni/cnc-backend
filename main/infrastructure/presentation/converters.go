@@ -176,3 +176,26 @@ func ConvertFacilityTypesToPresentation(domainFacilityTypes []facilityrental.Fac
 	}
 	return presentationFacilityTypes
 }
+
+func ConvertFacilitiesWithStatusToPresentation(domainFacilities []facilityrental.FacilityWithStatus) []FacilityWithStatus {
+	presentationFacilities := make([]FacilityWithStatus, len(domainFacilities))
+	for i, f := range domainFacilities {
+		var expiresAt *string
+		if f.ExpiresAt != nil {
+			formatted := f.ExpiresAt.Format("2006-01-02T15:04:05Z07:00")
+			expiresAt = &formatted
+		}
+
+		presentationFacilities[i] = FacilityWithStatus{
+			ID:                      f.Id.Value,
+			FacilityTypeID:          f.FacilityTypeId.Value,
+			Identifier:              f.Identifier,
+			FacilityTypeName:        string(f.FacilityTypeName),
+			FacilityTypeDescription: f.FacilityTypeDescription,
+			SuggestedPrice:          f.SuggestedPrice,
+			IsRented:                f.IsRented,
+			ExpiresAt:               expiresAt,
+		}
+	}
+	return presentationFacilities
+}

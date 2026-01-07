@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	_ "embed"
 	"errors"
+	"time"
 
 	"github.com/alessandro-marcantoni/cnc-backend/main/domain"
 	facilityrental "github.com/alessandro-marcantoni/cnc-backend/main/domain/facility_rental"
@@ -16,6 +17,9 @@ var getRentedFacilitiesByMemberQuery string
 
 //go:embed queries/get_facilities_catalog.sql
 var getFacilitiesCatalogQuery string
+
+//go:embed queries/get_facilities_by_type.sql
+var getFacilitiesByTypeQuery string
 
 type SQLFacilityRepository struct {
 	db *sql.DB
@@ -55,6 +59,60 @@ func (r *SQLFacilityRepository) GetFacilitiesCatalog() []facilityrental.Facility
 	}
 
 	return facilityTypes
+}
+
+func (r *SQLFacilityRepository) GetFacilitiesByType(facilityTypeId domain.Id[facilityrental.FacilityType]) []facilityrental.FacilityWithStatus {
+	rows, err := r.db.Query(getFacilitiesByTypeQuery, facilityTypeId.Value)
+	if err != nil {
+		return []facilityrental.FacilityWithStatus{}
+	}
+	defer rows.Close()
+
+	var facilities []facilityrental.FacilityWithStatus
+
+	for rows.Next() {
+		var id int64
+		var facilityTypeId int64
+		var identifier string
+		var facilityTypeName string
+		var facilityTypeDescription sql.NullString
+		var suggestedPrice float64
+		var isRented bool
+		var expiresAt sql.NullTime
+
+		err := rows.Scan(
+			&id,
+			&facilityTypeId,
+			&identifier,
+			&facilityTypeName,
+			&facilityTypeDescription,
+			&suggestedPrice,
+			&isRented,
+			&expiresAt,
+		)
+		if err != nil {
+			continue
+		}
+
+		var expiresAtPtr *time.Time
+		if expiresAt.Valid {
+			expiresAtPtr = &expiresAt.Time
+		}
+
+		facility := facilityrental.FacilityWithStatus{
+			Id:                      domain.Id[facilityrental.Facility]{Value: id},
+			FacilityTypeId:          domain.Id[facilityrental.FacilityType]{Value: facilityTypeId},
+			Identifier:              identifier,
+			FacilityTypeName:        facilityrental.ToFacilityName(facilityTypeName),
+			FacilityTypeDescription: facilityTypeDescription.String,
+			SuggestedPrice:          suggestedPrice,
+			IsRented:                isRented,
+			ExpiresAt:               expiresAtPtr,
+		}
+		facilities = append(facilities, facility)
+	}
+
+	return facilities
 }
 
 func (r *SQLFacilityRepository) GetAvailableFacilities(serviceType facilityrental.FacilityName) []facilityrental.Facility {

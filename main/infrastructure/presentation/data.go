@@ -81,3 +81,14 @@ type FacilityType struct {
 	Description    string  `json:"description"`
 	SuggestedPrice float64 `json:"suggestedPrice"`
 }
+
+type FacilityWithStatus struct {
+	ID                      int64   `json:"id"`
+	FacilityTypeID          int64   `json:"facilityTypeId"`
+	Identifier              string  `json:"identifier"`
+	FacilityTypeName        string  `json:"facilityTypeName"`
+	FacilityTypeDescription string  `json:"facilityTypeDescription"`
+	SuggestedPrice          float64 `json:"suggestedPrice"`
+	IsRented                bool    `json:"isRented"`
+	ExpiresAt               *string `json:"expiresAt,omitempty"`
+}

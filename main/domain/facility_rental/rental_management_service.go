@@ -3,6 +3,7 @@ package facilityrental
 import (
 	"time"
 
+	"github.com/alessandro-marcantoni/cnc-backend/main/domain"
 	"github.com/alessandro-marcantoni/cnc-backend/main/shared/errors"
 	"github.com/alessandro-marcantoni/cnc-backend/main/shared/result"
 )
@@ -25,4 +26,8 @@ func (this RentalManagementService) RentService(f Facility, year time.Time) resu
 
 func (this RentalManagementService) GetFacilitiesCatalog() []FacilityType {
 	return this.repository.GetFacilitiesCatalog()
+}
+
+func (this RentalManagementService) GetFacilitiesByType(facilityTypeId domain.Id[FacilityType]) []FacilityWithStatus {
+	return this.repository.GetFacilitiesByType(facilityTypeId)
 }

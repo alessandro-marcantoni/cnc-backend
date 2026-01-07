@@ -204,3 +204,32 @@ func FacilitiesCatalogHandler(w http.ResponseWriter, r *http.Request) {
 	presentationFacilityTypes := presentation.ConvertFacilityTypesToPresentation(facilityTypes)
 	presentation.WriteJSON(w, http.StatusOK, presentationFacilityTypes)
 }
+
+func FacilitiesByTypeHandler(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodGet {
+		w.WriteHeader(http.StatusMethodNotAllowed)
+		return
+	}
+
+	if rentalService == nil {
+		presentation.WriteError(w, http.StatusInternalServerError, "service not initialized")
+		return
+	}
+
+	// Get facility type ID from query parameter
+	facilityTypeIDStr := r.URL.Query().Get("facility_type_id")
+	if facilityTypeIDStr == "" {
+		presentation.WriteError(w, http.StatusBadRequest, "facility_type_id is required")
+		return
+	}
+
+	facilityTypeID, err := strconv.ParseInt(facilityTypeIDStr, 10, 64)
+	if err != nil {
+		presentation.WriteError(w, http.StatusBadRequest, "invalid facility_type_id")
+		return
+	}
+
+	facilities := rentalService.GetFacilitiesByType(domain.Id[facilityrental.FacilityType]{Value: facilityTypeID})
+	presentationFacilities := presentation.ConvertFacilitiesWithStatusToPresentation(facilities)
+	presentation.WriteJSON(w, http.StatusOK, presentationFacilities)
+}
