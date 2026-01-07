@@ -17,6 +17,9 @@ var getMemberByIdQuery string
 //go:embed queries/get_all_members.sql
 var getAllMembersQuery string
 
+//go:embed queries/get_members_by_season.sql
+var getMembersBySeasonQuery string
+
 type SQLMemberRepository struct {
 	db *sql.DB
 }
@@ -40,23 +43,62 @@ func (r *SQLMemberRepository) GetAllMembers() result.Result[[]m.Member] {
 			&resultRow.FirstName,
 			&resultRow.LastName,
 			&resultRow.DateOfBirth,
-			&resultRow.Email,
-			&resultRow.MembershipID,
 			&resultRow.MembershipNumber,
-			&resultRow.MembershipPeriodID,
-			&resultRow.ValidFrom,
-			&resultRow.ExpiresAt,
-			&resultRow.MembershipStatus,
+			&resultRow.Season,
+			&resultRow.SeasonStartsAt,
+			&resultRow.SeasonEndsAt,
 			&resultRow.ExclusionDeliberatedAt,
-			&resultRow.ExcludedAt,
+			&resultRow.AmountPaid,
 			&resultRow.PaidAt,
-			&resultRow.Addresses,
+			&resultRow.Currency,
 		)
 		if err != nil {
 			return result.Err[[]m.Member](errors.RepositoryError{Description: err.Error()})
 		}
 
 		memberResult := MapToMemberFromAllMembersQuery(resultRow)
+		if !memberResult.IsSuccess() {
+			return result.Err[[]m.Member](memberResult.Error())
+		}
+
+		members = append(members, memberResult.Value())
+	}
+
+	if err = rows.Err(); err != nil {
+		return result.Err[[]m.Member](errors.RepositoryError{Description: err.Error()})
+	}
+
+	return result.Ok(members)
+}
+
+func (r *SQLMemberRepository) GetMembersBySeason(year int64) result.Result[[]m.Member] {
+	var members []m.Member
+	rows, err := r.db.QueryContext(context.Background(), getMembersBySeasonQuery, year)
+	if err != nil {
+		return result.Err[[]m.Member](errors.RepositoryError{Description: err.Error()})
+	}
+	defer rows.Close()
+
+	for rows.Next() {
+		var resultRow GetMembersBySeasonQueryResult
+		err := rows.Scan(
+			&resultRow.MemberID,
+			&resultRow.FirstName,
+			&resultRow.LastName,
+			&resultRow.DateOfBirth,
+			&resultRow.MembershipNumber,
+			&resultRow.SeasonStartsAt,
+			&resultRow.SeasonEndsAt,
+			&resultRow.ExclusionDeliberatedAt,
+			&resultRow.AmountPaid,
+			&resultRow.PaidAt,
+			&resultRow.Currency,
+		)
+		if err != nil {
+			return result.Err[[]m.Member](errors.RepositoryError{Description: err.Error()})
+		}
+
+		memberResult := MapToMemberFromQueryBySeason(resultRow)
 		if !memberResult.IsSuccess() {
 			return result.Err[[]m.Member](memberResult.Error())
 		}

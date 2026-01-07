@@ -3,34 +3,17 @@ SELECT
     m.first_name,
     m.last_name,
     m.date_of_birth,
-    m.email,
-
-    mem.id              AS membership_id,
     mem.number          AS membership_number,
-
-    mp.id               AS membership_period_id,
-    mp.valid_from,
-    mp.expires_at,
-    ms.status           AS membership_status,
+    CASE WHEN CURRENT_DATE >= s.starts_at AND CURRENT_DATE < s.ends_at THEN 'CURRENT'
+     WHEN CURRENT_DATE < s.starts_at THEN 'FUTURE'
+     WHEN CURRENT_DATE >= s.ends_at THEN 'PAST'
+     END AS season,
+    s.starts_at AS season_starts_at,
+    s.ends_at AS season_ends_at,
     mp.exclusion_deliberated_at,
-    mp.excluded_at,
-    p.paid_at,
-
-    COALESCE(
-        (
-            SELECT json_agg(
-                jsonb_build_object(
-                    'country', a.country,
-                    'city', a.city,
-                    'street', a.street,
-                    'street_number', a.street_number
-                )
-            )
-            FROM addresses a
-            WHERE a.member_id = m.id
-        ),
-        '[]'::json
-    ) AS addresses
+    p.amount AS amount_paid,
+    p.paid_at AS paid_at,
+    p.currency AS currency
 FROM members m
 LEFT JOIN (
     SELECT
@@ -40,25 +23,24 @@ LEFT JOIN (
         mp.id AS period_id,
         mp.valid_from,
         mp.expires_at,
-        mp.status_id,
+        mp.season_id,
         mp.exclusion_deliberated_at,
-        mp.excluded_at,
         ROW_NUMBER() OVER (
             PARTITION BY mem.member_id
-            ORDER BY mp.valid_from DESC
+            ORDER BY mp.season_id DESC
         ) AS rn
     FROM memberships mem
     JOIN membership_periods mp
         ON mp.membership_id = mem.id
-) latest
-    ON latest.member_id = m.id
-   AND latest.rn = 1
+) latest_membership_period
+    ON latest_membership_period.member_id = m.id
+   AND latest_membership_period.rn = 1
 LEFT JOIN memberships mem
-    ON mem.id = latest.id
+    ON mem.id = latest_membership_period.id
 LEFT JOIN membership_periods mp
-    ON mp.id = latest.period_id
-LEFT JOIN membership_statuses ms
-    ON ms.id = mp.status_id
+    ON mp.id = latest_membership_period.period_id
 LEFT JOIN payments p
     ON p.membership_period_id = mp.id
+LEFT JOIN seasons s
+    ON s.id = mp.season_id
 ORDER BY m.last_name, m.first_name

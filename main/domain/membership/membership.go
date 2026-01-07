@@ -25,10 +25,8 @@ type MembershipInfo interface {
 type MembershipStatus string
 
 const (
-	MembershipStatusActive               MembershipStatus = "ACTIVE"
-	MembershipStatusUnpaid               MembershipStatus = "UNPAID"
-	MembershipStatusExclusionDeliberated MembershipStatus = "EXCLUSION_DELIBERATED"
-	MembershipStatusExcluded             MembershipStatus = "EXCLUDED"
+	MembershipStatusActive   MembershipStatus = "ACTIVE"
+	MembershipStatusInactive MembershipStatus = "INACTIVE"
 )
 
 type Active struct {
@@ -36,21 +34,10 @@ type Active struct {
 	ValidUntilDate time.Time
 }
 
-type Unpaid struct {
+type Inactive struct {
 	ValidFromDate  time.Time
 	ValidUntilDate time.Time
-}
-
-type ExclusionDeliberated struct {
-	ValidFromDate  time.Time
-	ValidUntilDate time.Time
-	DecisionDate   time.Time
-}
-
-type Excluded struct {
-	ValidFromDate  time.Time
-	ValidUntilDate time.Time
-	DecisionDate   time.Time
+	ExcludedAt     time.Time
 }
 
 func (a Active) GetStatus() MembershipStatus {
@@ -65,38 +52,14 @@ func (a Active) GetValidUntilDate() time.Time {
 	return a.ValidUntilDate
 }
 
-func (e Unpaid) GetStatus() MembershipStatus {
-	return MembershipStatusUnpaid
+func (e Inactive) GetStatus() MembershipStatus {
+	return MembershipStatusInactive
 }
 
-func (e Unpaid) GetValidFromDate() time.Time {
+func (e Inactive) GetValidFromDate() time.Time {
 	return e.ValidFromDate
 }
 
-func (e Unpaid) GetValidUntilDate() time.Time {
-	return e.ValidUntilDate
-}
-
-func (e ExclusionDeliberated) GetStatus() MembershipStatus {
-	return MembershipStatusExclusionDeliberated
-}
-
-func (e ExclusionDeliberated) GetValidFromDate() time.Time {
-	return e.ValidFromDate
-}
-
-func (e ExclusionDeliberated) GetValidUntilDate() time.Time {
-	return e.ValidUntilDate
-}
-
-func (e Excluded) GetStatus() MembershipStatus {
-	return MembershipStatusExcluded
-}
-
-func (e Excluded) GetValidFromDate() time.Time {
-	return e.ValidFromDate
-}
-
-func (e Excluded) GetValidUntilDate() time.Time {
+func (e Inactive) GetValidUntilDate() time.Time {
 	return e.ValidUntilDate
 }

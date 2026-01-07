@@ -13,8 +13,12 @@ func NewMemberManagementService(repository MemberRepository) *MemberManagementSe
 	return &MemberManagementService{repository: repository}
 }
 
-func (this MemberManagementService) GetUpdatedListOfMembers() result.Result[[]Member] {
+func (this MemberManagementService) GetListOfAllMembers() result.Result[[]Member] {
 	return this.repository.GetAllMembers()
+}
+
+func (this MemberManagementService) GetListOfMembersBySeason(year int64) result.Result[[]Member] {
+	return this.repository.GetMembersBySeason(year)
 }
 
 func (this MemberManagementService) GetMemberById(id domain.Id[Member]) result.Result[MemberDetails] {

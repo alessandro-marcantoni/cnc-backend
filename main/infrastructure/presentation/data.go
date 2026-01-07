@@ -22,12 +22,12 @@ type Payment struct {
 }
 
 type Membership struct {
-	ID        int64   `json:"id"`
-	Number    int64   `json:"number"`
-	Status    string  `json:"status"`
-	ValidFrom string  `json:"validFrom"`
-	ExpiresAt string  `json:"expiresAt"`
-	Payment   Payment `json:"payment"`
+	ID        int64    `json:"id"`
+	Number    int64    `json:"number"`
+	Status    string   `json:"status"`
+	ValidFrom string   `json:"validFrom"`
+	ExpiresAt string   `json:"expiresAt"`
+	Payment   *Payment `json:"payment"`
 }
 
 type BoatInfo struct {
@@ -60,13 +60,13 @@ type MemberDetails struct {
 }
 
 type Member struct {
-	ID         int64      `json:"id"`
-	FirstName  string     `json:"firstName"`
-	LastName   string     `json:"lastName"`
-	Email      string     `json:"email"`
-	BirthDate  string     `json:"birthDate"`
-	Addresses  []Address  `json:"addresses"`
-	Membership Membership `json:"membership"`
+	ID               int64  `json:"id"`
+	FirstName        string `json:"firstName"`
+	LastName         string `json:"lastName"`
+	BirthDate        string `json:"birthDate"`
+	MembershipNumber int64  `json:"membershipNumber"`
+	MembershipStatus string `json:"membershipStatus"`
+	Paid             bool   `json:"paid"`
 }
 
 type MemberSummary struct {

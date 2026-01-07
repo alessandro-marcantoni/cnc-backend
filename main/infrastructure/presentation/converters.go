@@ -7,6 +7,7 @@ import (
 
 	facilityrental "github.com/alessandro-marcantoni/cnc-backend/main/domain/facility_rental"
 	"github.com/alessandro-marcantoni/cnc-backend/main/domain/membership"
+	"github.com/alessandro-marcantoni/cnc-backend/main/domain/payment"
 )
 
 func WriteJSON(w http.ResponseWriter, status int, v any) {
@@ -53,20 +54,26 @@ func convertAddressesToPresentation(a []membership.Address) []Address {
 }
 
 func convertMembershipToPresentation(m membership.Membership) Membership {
+	var p *Payment
+
+	switch casted := m.Payment.(type) {
+	case payment.PaymentPaid:
+		p = &Payment{
+			Amount:   casted.AmountPaid,
+			PaidAt:   casted.PaymentDate.Format("2006-01-02T15:04:05Z07:00"),
+			Currency: casted.Currency,
+		}
+	default:
+		p = nil
+	}
+
 	membership := Membership{
 		ID:        m.Id.Value,
 		Number:    m.Number,
 		Status:    string(m.Status.GetStatus()),
 		ValidFrom: m.Status.GetValidFromDate().Format("2006-01-02"),
 		ExpiresAt: m.Status.GetValidUntilDate().Format("2006-01-02"),
-		Payment: Payment{
-			Amount:   m.Payment.GetAmount(),
-			Currency: "EUR", // Default currency
-		},
-	}
-	// Set payment date if available
-	if paidAt := m.Payment.GetPaidAt(); !paidAt.IsZero() {
-		membership.Payment.PaidAt = paidAt.Format("2006-01-02T15:04:05Z07:00")
+		Payment:   p,
 	}
 
 	return membership
@@ -87,13 +94,13 @@ func ConvertMemberToPresentation(domainMember membership.Member) Member {
 	}
 
 	return Member{
-		ID:         domainMember.User.Id.Value,
-		FirstName:  domainMember.User.FirstName,
-		LastName:   domainMember.User.LastName,
-		Email:      domainMember.User.Email.Value,
-		BirthDate:  birthDate,
-		Addresses:  convertAddressesToPresentation(domainMember.Addresses),
-		Membership: convertMembershipToPresentation(domainMember.Membership),
+		ID:               domainMember.Id.Value,
+		FirstName:        domainMember.User.FirstName,
+		LastName:         domainMember.User.LastName,
+		BirthDate:        birthDate,
+		MembershipNumber: domainMember.Membership.Number,
+		MembershipStatus: string(domainMember.Membership.Status.GetStatus()),
+		Paid:             domainMember.Membership.Payment.GetStatus() == payment.Paid,
 	}
 }
 

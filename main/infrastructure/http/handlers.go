@@ -36,7 +36,19 @@ func MembersHandler(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		result := memberService.GetUpdatedListOfMembers()
+		var result result.Result[[]membership.Member]
+		switch {
+		case r.URL.Query().Get("season") != "":
+			year, err := strconv.ParseInt(r.URL.Query().Get("season"), 10, 64)
+			if err != nil {
+				presentation.WriteError(w, http.StatusBadRequest, "invalid season format")
+				return
+			}
+			result = memberService.GetListOfMembersBySeason(year)
+		default:
+			result = memberService.GetListOfAllMembers()
+		}
+
 		if !result.IsSuccess() {
 			presentation.WriteError(w, http.StatusInternalServerError, result.Error().Error())
 			return

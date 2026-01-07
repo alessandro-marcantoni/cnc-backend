@@ -9,35 +9,23 @@ import (
 
 func RenewedMembership(currentMembership Membership) result.Result[Membership] {
 	newValidityDate := currentMembership.Status.GetValidUntilDate().AddDate(1, 0, 0)
+
 	return result.Ok(Membership{
 		Number: currentMembership.Number,
 		Status: Active{
 			ValidUntilDate: newValidityDate,
 		},
-		Payment: payment.PaymentUnpaid{
-			AmountDue: SuggestedMembershipPrice,
-			DueDate:   newValidityDate,
-		},
+		Payment: payment.PaymentUnpaid{},
 	})
-}
-
-func DeliberatedExclusionMembership(currentMembership Membership, decisionDate time.Time) Membership {
-	return Membership{
-		Number: currentMembership.Number,
-		Status: ExclusionDeliberated{
-			ValidUntilDate: currentMembership.Status.GetValidUntilDate(),
-			DecisionDate:   decisionDate,
-		},
-		Payment: currentMembership.Payment,
-	}
 }
 
 func ExcludedMembership(currentMembership Membership, decisionDate time.Time) Membership {
 	return Membership{
 		Number: currentMembership.Number,
-		Status: Excluded{
+		Status: Inactive{
+			ValidFromDate:  currentMembership.Status.GetValidFromDate(),
 			ValidUntilDate: currentMembership.Status.GetValidUntilDate(),
-			DecisionDate:   decisionDate,
+			ExcludedAt:     decisionDate,
 		},
 		Payment: currentMembership.Payment,
 	}

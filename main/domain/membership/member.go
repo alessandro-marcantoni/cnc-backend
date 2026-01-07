@@ -37,19 +37,9 @@ func (m Member) RenewMembership() result.Result[Member] {
 	})
 }
 
-func (m Member) DeliberateExclusion(decisionDate time.Time) result.Result[Member] {
-	if m.Membership.Status.GetStatus() != MembershipStatusUnpaid {
-		return result.Err[Member](errors.MembershipStatusError{Description: "only members who did not pay can be deliberatively excluded"})
-	}
-	return result.Ok(Member{
-		User:       m.User,
-		Membership: DeliberatedExclusionMembership(m.Membership, decisionDate),
-	})
-}
-
 func (m Member) Exclude(decisionDate time.Time) result.Result[Member] {
-	if m.Membership.Status.GetStatus() != MembershipStatusExclusionDeliberated {
-		return result.Err[Member](errors.MembershipStatusError{Description: "only members with deliberated exclusion can be excluded"})
+	if m.Membership.Status.GetStatus() != MembershipStatusActive {
+		return result.Err[Member](errors.MembershipStatusError{Description: "only members who are active can be excluded"})
 	}
 	return result.Ok(Member{
 		User:       m.User,

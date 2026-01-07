@@ -85,21 +85,51 @@ func MapToMemberFromMemberByIdQuery(queryResult GetMemberByIdQueryResult) result
 			paymentInfo = payment.PaymentPaid{
 				AmountPaid:  m.Payment.Amount,
 				PaymentDate: m.Payment.PaidAt.Time,
+				Currency:    m.Payment.Currency,
 			}
 		} else {
-			paymentInfo = payment.PaymentUnpaid{
-				AmountDue: m.Payment.Amount,
-				DueDate:   m.ExpiresAt.Time,
+			paymentInfo = payment.PaymentUnpaid{}
+		}
+
+		var membershipStatus membership.MembershipInfo
+		switch {
+		case m.Status == "ACTIVE" && !m.Payment.PaidAt.Time.IsZero():
+			membershipStatus = membership.Active{
+				ValidFromDate:  m.ValidFrom.Time,
+				ValidUntilDate: m.ExpiresAt.Time,
+			}
+		case m.Status == "EXCLUSION_DELIBERATED":
+			deliberatedAt := time.Time{}
+			if m.ExclusionDeliberatedAt != nil {
+				deliberatedAt = m.ExclusionDeliberatedAt.Time
+			}
+			membershipStatus = membership.Inactive{
+				ValidFromDate:  m.ValidFrom.Time,
+				ValidUntilDate: m.ExpiresAt.Time,
+				ExcludedAt:     deliberatedAt,
+			}
+		case m.Status == "EXCLUDED":
+			excludedAt := time.Time{}
+			if m.ExcludedAt != nil {
+				excludedAt = m.ExcludedAt.Time
+			}
+			membershipStatus = membership.Inactive{
+				ValidFromDate:  m.ValidFrom.Time,
+				ValidUntilDate: m.ExpiresAt.Time,
+				ExcludedAt:     excludedAt,
+			}
+		default:
+			// Default to Active if unknown status
+			membershipStatus = membership.Active{
+				ValidFromDate:  m.ValidFrom.Time,
+				ValidUntilDate: m.ExpiresAt.Time,
 			}
 		}
 
 		domainMemberships = append(domainMemberships, membership.Membership{
-			Id:     domain.Id[membership.Membership]{Value: m.MembershipID},
-			Number: m.MembershipNumber,
-			Status: membership.Active{
-				ValidFromDate:  m.ValidFrom.Time,
-				ValidUntilDate: m.ExpiresAt.Time,
-			}, // Adjust based on status
+			Id:      domain.Id[membership.Membership]{Value: m.MembershipID},
+			Number:  m.MembershipNumber,
+			Status:  membershipStatus,
 			Payment: paymentInfo,
 		})
 	}
@@ -119,84 +149,41 @@ func MapToMemberFromMemberByIdQuery(queryResult GetMemberByIdQueryResult) result
 }
 
 func MapToMemberFromAllMembersQuery(queryResult GetAllMembersQueryResult) result.Result[membership.Member] {
-	// Unmarshal addresses with intermediate struct
-	var addressesRaw []struct {
-		Country      string `json:"country"`
-		City         string `json:"city"`
-		Street       string `json:"street"`
-		StreetNumber string `json:"street_number"`
-	}
-	if err := json.Unmarshal(queryResult.Addresses, &addressesRaw); err != nil {
-		return result.Err[membership.Member](err)
-	}
-	addresses := make([]membership.Address, len(addressesRaw))
-	for i, addr := range addressesRaw {
-		addresses[i] = membership.Address{
-			Country: addr.Country,
-			City:    addr.City,
-			Street:  addr.Street,
-			Number:  addr.StreetNumber,
-		}
-	}
-
 	// Check if member has a membership
-	if queryResult.MembershipID == nil || queryResult.MembershipNumber == nil {
+	if queryResult.MembershipNumber == nil {
 		return result.Err[membership.Member](errors.RepositoryError{Description: "member has no membership"})
 	}
 
 	// Determine membership status based on status string
 	var membershipStatus membership.MembershipInfo
-	if queryResult.ExpiresAt != nil && queryResult.ValidFrom != nil {
-		switch {
-		case queryResult.MembershipStatus != nil && *queryResult.MembershipStatus == "ACTIVE" && queryResult.PaidAt != nil:
-			membershipStatus = membership.Active{
-				ValidFromDate:  *queryResult.ValidFrom,
-				ValidUntilDate: *queryResult.ExpiresAt,
-			}
-		case queryResult.MembershipStatus != nil && *queryResult.MembershipStatus == "ACTIVE":
-			membershipStatus = membership.Unpaid{
-				ValidFromDate:  *queryResult.ValidFrom,
-				ValidUntilDate: *queryResult.ExpiresAt,
-			}
-		case queryResult.MembershipStatus != nil && *queryResult.MembershipStatus == "EXCLUSION_DELIBERATED":
-			deliberatedAt := time.Time{}
-			if queryResult.ExclusionDeliberatedAt != nil {
-				deliberatedAt = *queryResult.ExclusionDeliberatedAt
-			}
-			membershipStatus = membership.ExclusionDeliberated{
-				ValidFromDate:  *queryResult.ValidFrom,
-				ValidUntilDate: *queryResult.ExpiresAt,
-				DecisionDate:   deliberatedAt,
-			}
-		case queryResult.MembershipStatus != nil && *queryResult.MembershipStatus == "EXCLUDED":
-			excludedAt := time.Time{}
-			if queryResult.ExcludedAt != nil {
-				excludedAt = *queryResult.ExcludedAt
-			}
-			membershipStatus = membership.Excluded{
-				ValidFromDate:  *queryResult.ValidFrom,
-				ValidUntilDate: *queryResult.ExpiresAt,
-				DecisionDate:   excludedAt,
-			}
-		default:
-			// Default to Active if unknown status
-			membershipStatus = membership.Active{
-				ValidFromDate:  *queryResult.ValidFrom,
-				ValidUntilDate: *queryResult.ExpiresAt,
-			}
+	switch {
+	case (queryResult.Season == "PAST" || queryResult.Season == "CURRENT") && queryResult.ExclusionDeliberatedAt != nil:
+		membershipStatus = membership.Inactive{
+			ValidFromDate:  queryResult.SeasonStartsAt,
+			ValidUntilDate: queryResult.SeasonEndsAt,
+			ExcludedAt:     *queryResult.ExclusionDeliberatedAt,
 		}
-	} else {
-		return result.Err[membership.Member](errors.RepositoryError{Description: "membership has no expiration or valid from date"})
+	default:
+		membershipStatus = membership.Active{
+			ValidFromDate:  queryResult.SeasonStartsAt,
+			ValidUntilDate: queryResult.SeasonEndsAt,
+		}
 	}
 
-	// Create unpaid payment as default (payment info not included in this query)
-	paymentInfo := payment.PaymentUnpaid{
-		AmountDue: membership.SuggestedMembershipPrice,
-		DueDate:   *queryResult.ExpiresAt,
+	var paymentInfo payment.Payment
+	switch {
+	case queryResult.AmountPaid != nil && queryResult.PaidAt != nil:
+		paymentInfo = payment.PaymentPaid{
+			AmountPaid:  *queryResult.AmountPaid,
+			PaymentDate: *queryResult.PaidAt,
+			Currency:    *queryResult.Currency,
+		}
+	default:
+		paymentInfo = payment.PaymentUnpaid{}
 	}
 
 	domainMembership := membership.Membership{
-		Id:      domain.Id[membership.Membership]{Value: *queryResult.MembershipID},
+		Id:      domain.Id[membership.Membership]{Value: queryResult.MemberID},
 		Number:  *queryResult.MembershipNumber,
 		Status:  membershipStatus,
 		Payment: paymentInfo,
@@ -208,8 +195,57 @@ func MapToMemberFromAllMembersQuery(queryResult GetAllMembersQueryResult) result
 			FirstName:    queryResult.FirstName,
 			LastName:     queryResult.LastName,
 			BirthDate:    queryResult.DateOfBirth,
-			Email:        membership.EmailAddress{Value: queryResult.Email},
-			Addresses:    addresses,
+			Email:        membership.EmailAddress{Value: "sample.email@example.com"},
+			Addresses:    []membership.Address{},
+			PhoneNumbers: []membership.PhoneNumber{},
+		},
+		Membership: domainMembership,
+	})
+}
+
+func MapToMemberFromQueryBySeason(queryResult GetMembersBySeasonQueryResult) result.Result[membership.Member] {
+	var membershipStatus membership.MembershipInfo
+	switch {
+	case queryResult.ExclusionDeliberatedAt != nil:
+		membershipStatus = membership.Inactive{
+			ValidFromDate:  queryResult.SeasonStartsAt,
+			ValidUntilDate: queryResult.SeasonEndsAt,
+			ExcludedAt:     *queryResult.ExclusionDeliberatedAt,
+		}
+	default:
+		membershipStatus = membership.Active{
+			ValidFromDate:  queryResult.SeasonStartsAt,
+			ValidUntilDate: queryResult.SeasonEndsAt,
+		}
+	}
+
+	var paymentInfo payment.Payment
+	switch {
+	case queryResult.AmountPaid != nil && queryResult.PaidAt != nil:
+		paymentInfo = payment.PaymentPaid{
+			AmountPaid:  *queryResult.AmountPaid,
+			PaymentDate: *queryResult.PaidAt,
+			Currency:    *queryResult.Currency,
+		}
+	default:
+		paymentInfo = payment.PaymentUnpaid{}
+	}
+
+	domainMembership := membership.Membership{
+		Id:      domain.Id[membership.Membership]{Value: queryResult.MemberID},
+		Number:  *queryResult.MembershipNumber,
+		Status:  membershipStatus,
+		Payment: paymentInfo,
+	}
+
+	return result.Ok(membership.Member{
+		User: membership.User{
+			Id:           domain.Id[membership.User]{Value: queryResult.MemberID},
+			FirstName:    queryResult.FirstName,
+			LastName:     queryResult.LastName,
+			BirthDate:    queryResult.DateOfBirth,
+			Email:        membership.EmailAddress{Value: "sample.email@example.com"},
+			Addresses:    []membership.Address{},
 			PhoneNumbers: []membership.PhoneNumber{},
 		},
 		Membership: domainMembership,
