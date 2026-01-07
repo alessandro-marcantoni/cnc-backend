@@ -163,3 +163,16 @@ func ConvertRentedFacilityToPresentation(rf facilityrental.RentedFacility, facil
 
 	return rentedFacility
 }
+
+func ConvertFacilityTypesToPresentation(domainFacilityTypes []facilityrental.FacilityType) []FacilityType {
+	presentationFacilityTypes := make([]FacilityType, len(domainFacilityTypes))
+	for i, ft := range domainFacilityTypes {
+		presentationFacilityTypes[i] = FacilityType{
+			ID:             ft.Id.Value,
+			Name:           string(ft.FacilityName),
+			Description:    ft.Description,
+			SuggestedPrice: ft.SuggestedPrice,
+		}
+	}
+	return presentationFacilityTypes
+}

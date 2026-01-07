@@ -8,20 +8,24 @@ import (
 	"strings"
 
 	"github.com/alessandro-marcantoni/cnc-backend/main/domain"
+	facilityrental "github.com/alessandro-marcantoni/cnc-backend/main/domain/facility_rental"
 	"github.com/alessandro-marcantoni/cnc-backend/main/domain/membership"
 	"github.com/alessandro-marcantoni/cnc-backend/main/infrastructure/persistence"
 	"github.com/alessandro-marcantoni/cnc-backend/main/infrastructure/presentation"
+	"github.com/alessandro-marcantoni/cnc-backend/main/shared/result"
 )
 
 var (
 	memberService *membership.MemberManagementService
 	facilityRepo  *persistence.SQLFacilityRepository
+	rentalService *facilityrental.RentalManagementService
 )
 
 func InitializeServices(db *sql.DB) {
 	memberRepository := persistence.NewSQLMemberRepository(db)
 	memberService = membership.NewMemberManagementService(memberRepository)
 	facilityRepo = persistence.NewSQLFacilityRepository(db)
+	rentalService = facilityrental.NewRentalManagementService(facilityRepo)
 }
 
 func HealthHandler(w http.ResponseWriter, r *http.Request) {
@@ -183,4 +187,20 @@ func RentedFacilitiesHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	presentation.WriteJSON(w, http.StatusOK, rentedFacilities)
+}
+
+func FacilitiesCatalogHandler(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodGet {
+		w.WriteHeader(http.StatusMethodNotAllowed)
+		return
+	}
+
+	if rentalService == nil {
+		presentation.WriteError(w, http.StatusInternalServerError, "service not initialized")
+		return
+	}
+
+	facilityTypes := rentalService.GetFacilitiesCatalog()
+	presentationFacilityTypes := presentation.ConvertFacilityTypesToPresentation(facilityTypes)
+	presentation.WriteJSON(w, http.StatusOK, presentationFacilityTypes)
 }

@@ -74,3 +74,10 @@ type MemberSummary struct {
 	Name  string `json:"name"`
 	Email string `json:"email"`
 }
+
+type FacilityType struct {
+	ID             int64   `json:"id"`
+	Name           string  `json:"name"`
+	Description    string  `json:"description"`
+	SuggestedPrice float64 `json:"suggestedPrice"`
+}

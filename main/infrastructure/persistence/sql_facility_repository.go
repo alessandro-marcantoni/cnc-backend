@@ -14,6 +14,9 @@ import (
 //go:embed queries/get_rented_facilities_by_member.sql
 var getRentedFacilitiesByMemberQuery string
 
+//go:embed queries/get_facilities_catalog.sql
+var getFacilitiesCatalogQuery string
+
 type SQLFacilityRepository struct {
 	db *sql.DB
 }
@@ -22,7 +25,39 @@ func NewSQLFacilityRepository(db *sql.DB) *SQLFacilityRepository {
 	return &SQLFacilityRepository{db: db}
 }
 
-func (r *SQLFacilityRepository) GetAvailableFacilities(serviceType facilityrental.FacilityType) []facilityrental.Facility {
+func (r *SQLFacilityRepository) GetFacilitiesCatalog() []facilityrental.FacilityType {
+	rows, err := r.db.Query(getFacilitiesCatalogQuery)
+	if err != nil {
+		return []facilityrental.FacilityType{}
+	}
+	defer rows.Close()
+
+	var facilityTypes []facilityrental.FacilityType
+
+	for rows.Next() {
+		var id int64
+		var name string
+		var description sql.NullString
+		var suggestedPrice float64
+
+		err := rows.Scan(&id, &name, &description, &suggestedPrice)
+		if err != nil {
+			continue
+		}
+
+		facilityType := facilityrental.FacilityType{
+			Id:             domain.Id[facilityrental.FacilityType]{Value: id},
+			FacilityName:   facilityrental.ToFacilityName(name),
+			Description:    description.String,
+			SuggestedPrice: suggestedPrice,
+		}
+		facilityTypes = append(facilityTypes, facilityType)
+	}
+
+	return facilityTypes
+}
+
+func (r *SQLFacilityRepository) GetAvailableFacilities(serviceType facilityrental.FacilityName) []facilityrental.Facility {
 	// TODO: Implement this method
 	return []facilityrental.Facility{}
 }

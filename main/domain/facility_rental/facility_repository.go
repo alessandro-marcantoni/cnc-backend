@@ -7,7 +7,8 @@ import (
 )
 
 type FacilityRepository interface {
-	GetAvailableFacilities(serviceType FacilityType) []Facility
+	GetFacilitiesCatalog() []FacilityType
+	GetAvailableFacilities(serviceType FacilityName) []Facility
 	GetFacilitiesRentedByMember(memberId domain.Id[membership.User]) []RentedFacility
 	RentFacility(memberId domain.Id[membership.User], facilityId domain.Id[Facility], boatInfo *domain.Id[BoatInfo]) result.Result[RentedFacility]
 }
