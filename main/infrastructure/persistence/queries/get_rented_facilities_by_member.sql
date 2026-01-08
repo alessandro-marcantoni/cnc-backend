@@ -31,5 +31,8 @@ LEFT JOIN boats b
     ON b.rented_facility_id = rf.id
 LEFT JOIN payments p
     ON p.rented_facility_id = rf.id
+LEFT JOIN seasons s
+    ON s.id = rf.season_id
 WHERE rf.member_id = $1
+AND s.code = $2
 ORDER BY rf.rented_at DESC;

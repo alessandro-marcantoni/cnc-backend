@@ -168,8 +168,8 @@ func (r *SQLFacilityRepository) RentFacility(memberId domain.Id[membership.User]
 	return result.Err[facilityrental.RentedFacility](errors.New("method not implemented"))
 }
 
-func (r *SQLFacilityRepository) GetRentedFacilityDTOs(memberId int64) ([]GetRentedFacilitiesByMemberQueryResult, error) {
-	rows, err := r.db.Query(getRentedFacilitiesByMemberQuery, memberId)
+func (r *SQLFacilityRepository) GetRentedFacilityDTOs(memberId int64, season string) ([]GetRentedFacilitiesByMemberQueryResult, error) {
+	rows, err := r.db.Query(getRentedFacilitiesByMemberQuery, memberId, season)
 	if err != nil {
 		return nil, err
 	}

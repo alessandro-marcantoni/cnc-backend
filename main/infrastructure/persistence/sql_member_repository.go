@@ -113,9 +113,9 @@ func (r *SQLMemberRepository) GetMembersBySeason(year int64) result.Result[[]m.M
 	return result.Ok(members)
 }
 
-func (r *SQLMemberRepository) GetMemberById(id domain.Id[m.Member]) result.Result[m.MemberDetails] {
+func (r *SQLMemberRepository) GetMemberById(id domain.Id[m.Member], season string) result.Result[m.MemberDetails] {
 	var resultRow GetMemberByIdQueryResult
-	err := r.db.QueryRowContext(context.Background(), getMemberByIdQuery, id.Value).Scan(
+	err := r.db.QueryRowContext(context.Background(), getMemberByIdQuery, id.Value, season).Scan(
 		&resultRow.MemberID,
 		&resultRow.FirstName,
 		&resultRow.LastName,

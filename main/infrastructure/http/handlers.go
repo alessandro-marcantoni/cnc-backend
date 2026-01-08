@@ -94,8 +94,15 @@ func MemberByIDHandler(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
+		// Get season from query parameter
+		season := r.URL.Query().Get("season")
+		if season == "" {
+			presentation.WriteError(w, http.StatusBadRequest, "missing season query parameter")
+			return
+		}
+
 		memberId := domain.Id[membership.Member]{Value: id}
-		result := memberService.GetMemberById(memberId)
+		result := memberService.GetMemberById(memberId, season)
 
 		if !result.IsSuccess() {
 			presentation.WriteError(w, http.StatusNotFound, "member not found")
@@ -134,8 +141,15 @@ func RentedFacilitiesHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// Get season from query parameter
+	season := r.URL.Query().Get("season")
+	if season == "" {
+		presentation.WriteError(w, http.StatusBadRequest, "missing season query parameter")
+		return
+	}
+
 	// Get DTOs from repository
-	dtos, err := facilityRepo.GetRentedFacilityDTOs(memberId)
+	dtos, err := facilityRepo.GetRentedFacilityDTOs(memberId, season)
 	if err != nil {
 		presentation.WriteError(w, http.StatusInternalServerError, "failed to retrieve rented facilities")
 		return
