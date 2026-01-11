@@ -131,7 +131,7 @@ FROM members;
 -- MEMBERSHIP STATUSES
 -- =======================================
 INSERT INTO membership_statuses (status) VALUES
-('ACTIVE'),('EXCLUSION_DELIBERATED'),('EXCLUDED');
+('ACTIVE'),('SUSPENDED'),('EXCLUDED');
 
 -- =======================================
 -- MEMBERSHIPS

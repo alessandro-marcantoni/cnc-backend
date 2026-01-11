@@ -80,6 +80,7 @@ CREATE TABLE IF NOT EXISTS rented_facilities (
     rented_at TIMESTAMP NOT NULL DEFAULT now(),
     expires_at TIMESTAMP NOT NULL,
     season_id BIGINT NOT NULL REFERENCES seasons(id),
+    price NUMERIC(10, 2) NOT NULL CHECK (price >= 0),
     CHECK (expires_at > rented_at)
 );
 
@@ -119,8 +120,8 @@ CREATE TABLE IF NOT EXISTS membership_periods (
     status_id BIGINT NOT NULL
         REFERENCES membership_statuses(id),
     exclusion_deliberated_at TIMESTAMP,
-    excluded_at TIMESTAMP,
     season_id BIGINT NOT NULL REFERENCES seasons(id),
+    price NUMERIC(10, 2) NOT NULL CHECK (price >= 0),
     CHECK (expires_at > valid_from),
     UNIQUE (membership_id, valid_from)
 );

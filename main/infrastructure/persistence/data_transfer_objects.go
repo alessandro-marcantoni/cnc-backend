@@ -22,6 +22,7 @@ type GetAllMembersQueryResult struct {
 	LastName               string     `json:"last_name"`
 	DateOfBirth            time.Time  `json:"date_of_birth"`
 	MembershipNumber       *int64     `json:"membership_number"`
+	MembershipStatus       string     `json:"membership_status"`
 	Season                 string     `json:"season"`
 	SeasonStartsAt         time.Time  `json:"season_starts_at"`
 	SeasonEndsAt           time.Time  `json:"season_ends_at"`
@@ -37,6 +38,7 @@ type GetMembersBySeasonQueryResult struct {
 	LastName               string     `json:"last_name"`
 	DateOfBirth            time.Time  `json:"date_of_birth"`
 	MembershipNumber       *int64     `json:"membership_number"`
+	MembershipStatus       string     `json:"membership_status"`
 	SeasonStartsAt         time.Time  `json:"season_starts_at"`
 	SeasonEndsAt           time.Time  `json:"season_ends_at"`
 	ExclusionDeliberatedAt *time.Time `json:"exclusion_deliberated_at"`

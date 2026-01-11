@@ -65,7 +65,7 @@ func MapToMemberFromMemberByIdQuery(queryResult GetMemberByIdQueryResult) result
 		Status                 string       `json:"status"`
 		ExclusionDeliberatedAt *PgTimestamp `json:"exclusion_deliberated_at"`
 		ExcludedAt             *PgTimestamp `json:"excluded_at"`
-		Payment                struct {
+		Payment                *struct {
 			Amount         float64     `json:"amount"`
 			Currency       string      `json:"currency"`
 			PaidAt         PgTimestamp `json:"paid_at"`
@@ -81,7 +81,7 @@ func MapToMemberFromMemberByIdQuery(queryResult GetMemberByIdQueryResult) result
 	var domainMemberships []membership.Membership
 	for _, m := range memberships {
 		var paymentInfo payment.Payment
-		if m.Payment.Amount > 0 {
+		if m.Payment != nil {
 			paymentInfo = payment.PaymentPaid{
 				AmountPaid:  m.Payment.Amount,
 				PaymentDate: m.Payment.PaidAt.Time,
@@ -93,30 +93,30 @@ func MapToMemberFromMemberByIdQuery(queryResult GetMemberByIdQueryResult) result
 
 		var membershipStatus membership.MembershipInfo
 		switch {
-		case m.Status == "ACTIVE" && !m.Payment.PaidAt.Time.IsZero():
+		case m.Status == "ACTIVE" && m.ExpiresAt.After(time.Now()):
 			membershipStatus = membership.Active{
 				ValidFromDate:  m.ValidFrom.Time,
 				ValidUntilDate: m.ExpiresAt.Time,
 			}
-		case m.Status == "EXCLUSION_DELIBERATED":
-			deliberatedAt := time.Time{}
-			if m.ExclusionDeliberatedAt != nil {
-				deliberatedAt = m.ExclusionDeliberatedAt.Time
-			}
-			membershipStatus = membership.Inactive{
+		case m.Status == "ACTIVE" && m.ExpiresAt.Before(time.Now()):
+			membershipStatus = membership.Expired{
 				ValidFromDate:  m.ValidFrom.Time,
 				ValidUntilDate: m.ExpiresAt.Time,
-				ExcludedAt:     deliberatedAt,
 			}
 		case m.Status == "EXCLUDED":
 			excludedAt := time.Time{}
 			if m.ExcludedAt != nil {
 				excludedAt = m.ExcludedAt.Time
 			}
-			membershipStatus = membership.Inactive{
+			membershipStatus = membership.Excluded{
 				ValidFromDate:  m.ValidFrom.Time,
 				ValidUntilDate: m.ExpiresAt.Time,
 				ExcludedAt:     excludedAt,
+			}
+		case m.Status == "SUSPENDED":
+			membershipStatus = membership.Suspended{
+				ValidFromDate:  m.ValidFrom.Time,
+				ValidUntilDate: m.ExpiresAt.Time,
 			}
 		default:
 			// Default to Active if unknown status
@@ -157,11 +157,26 @@ func MapToMemberFromAllMembersQuery(queryResult GetAllMembersQueryResult) result
 	// Determine membership status based on status string
 	var membershipStatus membership.MembershipInfo
 	switch {
-	case (queryResult.Season == "PAST" || queryResult.Season == "CURRENT") && queryResult.ExclusionDeliberatedAt != nil:
-		membershipStatus = membership.Inactive{
+	case queryResult.Season == "PAST" && queryResult.MembershipStatus == "ACTIVE":
+		membershipStatus = membership.Expired{
+			ValidFromDate:  queryResult.SeasonStartsAt,
+			ValidUntilDate: queryResult.SeasonEndsAt,
+		}
+	case queryResult.Season == "CURRENT" && queryResult.MembershipStatus == "ACTIVE":
+		membershipStatus = membership.Active{
+			ValidFromDate:  queryResult.SeasonStartsAt,
+			ValidUntilDate: queryResult.SeasonEndsAt,
+		}
+	case (queryResult.Season == "PAST" || queryResult.Season == "CURRENT") && queryResult.MembershipStatus == "EXCLUDED":
+		membershipStatus = membership.Excluded{
 			ValidFromDate:  queryResult.SeasonStartsAt,
 			ValidUntilDate: queryResult.SeasonEndsAt,
 			ExcludedAt:     *queryResult.ExclusionDeliberatedAt,
+		}
+	case (queryResult.Season == "PAST" || queryResult.Season == "CURRENT") && queryResult.MembershipStatus == "SUSPENDED":
+		membershipStatus = membership.Suspended{
+			ValidFromDate:  queryResult.SeasonStartsAt,
+			ValidUntilDate: queryResult.SeasonEndsAt,
 		}
 	default:
 		membershipStatus = membership.Active{
@@ -206,14 +221,19 @@ func MapToMemberFromAllMembersQuery(queryResult GetAllMembersQueryResult) result
 func MapToMemberFromQueryBySeason(queryResult GetMembersBySeasonQueryResult) result.Result[membership.Member] {
 	var membershipStatus membership.MembershipInfo
 	switch {
-	case queryResult.ExclusionDeliberatedAt != nil:
-		membershipStatus = membership.Inactive{
+	case queryResult.MembershipStatus == "EXCLUDED":
+		membershipStatus = membership.Excluded{
 			ValidFromDate:  queryResult.SeasonStartsAt,
 			ValidUntilDate: queryResult.SeasonEndsAt,
 			ExcludedAt:     *queryResult.ExclusionDeliberatedAt,
 		}
-	default:
+	case queryResult.MembershipStatus == "ACTIVE":
 		membershipStatus = membership.Active{
+			ValidFromDate:  queryResult.SeasonStartsAt,
+			ValidUntilDate: queryResult.SeasonEndsAt,
+		}
+	case queryResult.MembershipStatus == "SUSPENDED":
+		membershipStatus = membership.Suspended{
 			ValidFromDate:  queryResult.SeasonStartsAt,
 			ValidUntilDate: queryResult.SeasonEndsAt,
 		}

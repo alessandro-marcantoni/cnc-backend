@@ -6,6 +6,7 @@ WITH membership_details AS (
         mp.expires_at,
         mp.exclusion_deliberated_at,
         mp.excluded_at,
+        mp.status_id,
         p.amount AS payment_amount,
         p.currency AS payment_currency,
         p.paid_at AS payment_date,
@@ -48,6 +49,7 @@ SELECT
             'expires_at', md.expires_at,
             'exclusion_deliberated_at', md.exclusion_deliberated_at,
             'excluded_at', md.excluded_at,
+            'status', ms.status,
             'payment', CASE
                 WHEN md.payment_amount IS NOT NULL THEN
                     jsonb_build_object(
@@ -66,5 +68,6 @@ FROM members m
 LEFT JOIN phone_numbers pn ON m.id = pn.member_id
 LEFT JOIN addresses a ON m.id = a.member_id
 LEFT JOIN membership_details md ON m.id = md.membership_id
+LEFT JOIN membership_statuses ms ON ms.id = md.status_id
 WHERE m.id = $1
 GROUP BY m.id;

@@ -7,12 +7,14 @@ SELECT
     s.starts_at AS season_starts_at,
     s.ends_at AS season_ends_at,
     mp.exclusion_deliberated_at,
+    ms.status AS membership_status,
     p.amount AS amount_paid,
     p.paid_at AS paid_at,
     p.currency AS currency
 FROM members m
 LEFT JOIN memberships mem ON m.id = mem.member_id
 LEFT JOIN membership_periods mp ON mem.id = mp.membership_id
+LEFT JOIN membership_statuses ms ON mp.status_id = ms.id
 LEFT JOIN payments p ON mp.id = p.membership_period_id
 LEFT JOIN seasons s ON mp.season_id = s.id
 WHERE s.code = $1

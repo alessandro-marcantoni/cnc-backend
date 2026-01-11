@@ -22,7 +22,7 @@ func RenewedMembership(currentMembership Membership) result.Result[Membership] {
 func ExcludedMembership(currentMembership Membership, decisionDate time.Time) Membership {
 	return Membership{
 		Number: currentMembership.Number,
-		Status: Inactive{
+		Status: Excluded{
 			ValidFromDate:  currentMembership.Status.GetValidFromDate(),
 			ValidUntilDate: currentMembership.Status.GetValidUntilDate(),
 			ExcludedAt:     decisionDate,
