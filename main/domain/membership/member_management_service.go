@@ -32,3 +32,7 @@ func (this MemberManagementService) GetMembersWhoDidNotPayForServices() []Member
 func (this MemberManagementService) GetMembersWhoDidNotPayForMembership() []Member {
 	return this.repository.GetMembersWhoDidNotPayForMembership()
 }
+
+func (this MemberManagementService) CreateMember(user User, createMembership bool, seasonId *int64, price *float64) result.Result[MemberDetails] {
+	return this.repository.CreateMember(user, createMembership, seasonId, price)
+}

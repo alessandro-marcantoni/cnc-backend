@@ -157,31 +157,33 @@ func MapToMemberFromAllMembersQuery(queryResult GetAllMembersQueryResult) result
 	// Determine membership status based on status string
 	var membershipStatus membership.MembershipInfo
 	switch {
-	case queryResult.Season == "PAST" && queryResult.MembershipStatus == "ACTIVE":
+	case queryResult.Season == nil:
+		membershipStatus = membership.None{}
+	case *queryResult.Season == "PAST" && *queryResult.MembershipStatus == "ACTIVE":
 		membershipStatus = membership.Expired{
-			ValidFromDate:  queryResult.SeasonStartsAt,
-			ValidUntilDate: queryResult.SeasonEndsAt,
+			ValidFromDate:  *queryResult.SeasonStartsAt,
+			ValidUntilDate: *queryResult.SeasonEndsAt,
 		}
-	case queryResult.Season == "CURRENT" && queryResult.MembershipStatus == "ACTIVE":
+	case *queryResult.Season == "CURRENT" && *queryResult.MembershipStatus == "ACTIVE":
 		membershipStatus = membership.Active{
-			ValidFromDate:  queryResult.SeasonStartsAt,
-			ValidUntilDate: queryResult.SeasonEndsAt,
+			ValidFromDate:  *queryResult.SeasonStartsAt,
+			ValidUntilDate: *queryResult.SeasonEndsAt,
 		}
-	case (queryResult.Season == "PAST" || queryResult.Season == "CURRENT") && queryResult.MembershipStatus == "EXCLUDED":
+	case (*queryResult.Season == "PAST" || *queryResult.Season == "CURRENT") && *queryResult.MembershipStatus == "EXCLUDED":
 		membershipStatus = membership.Excluded{
-			ValidFromDate:  queryResult.SeasonStartsAt,
-			ValidUntilDate: queryResult.SeasonEndsAt,
+			ValidFromDate:  *queryResult.SeasonStartsAt,
+			ValidUntilDate: *queryResult.SeasonEndsAt,
 			ExcludedAt:     *queryResult.ExclusionDeliberatedAt,
 		}
-	case (queryResult.Season == "PAST" || queryResult.Season == "CURRENT") && queryResult.MembershipStatus == "SUSPENDED":
+	case (*queryResult.Season == "PAST" || *queryResult.Season == "CURRENT") && *queryResult.MembershipStatus == "SUSPENDED":
 		membershipStatus = membership.Suspended{
-			ValidFromDate:  queryResult.SeasonStartsAt,
-			ValidUntilDate: queryResult.SeasonEndsAt,
+			ValidFromDate:  *queryResult.SeasonStartsAt,
+			ValidUntilDate: *queryResult.SeasonEndsAt,
 		}
 	default:
 		membershipStatus = membership.Active{
-			ValidFromDate:  queryResult.SeasonStartsAt,
-			ValidUntilDate: queryResult.SeasonEndsAt,
+			ValidFromDate:  *queryResult.SeasonStartsAt,
+			ValidUntilDate: *queryResult.SeasonEndsAt,
 		}
 	}
 

@@ -29,6 +29,7 @@ const (
 	MembershipStatusSuspended MembershipStatus = "SUSPENDED"
 	MembershipStatusExcluded  MembershipStatus = "EXCLUDED"
 	MembershipStatusExpired   MembershipStatus = "EXPIRED"
+	MembershipStatusNone      MembershipStatus = "NONE"
 )
 
 type Active struct {
@@ -50,6 +51,9 @@ type Excluded struct {
 type Expired struct {
 	ValidFromDate  time.Time
 	ValidUntilDate time.Time
+}
+
+type None struct {
 }
 
 func (a Active) GetStatus() MembershipStatus {
@@ -98,4 +102,16 @@ func (e Expired) GetValidFromDate() time.Time {
 
 func (e Expired) GetValidUntilDate() time.Time {
 	return e.ValidUntilDate
+}
+
+func (n None) GetStatus() MembershipStatus {
+	return MembershipStatusNone
+}
+
+func (n None) GetValidFromDate() time.Time {
+	return time.Time{}
+}
+
+func (n None) GetValidUntilDate() time.Time {
+	return time.Time{}
 }

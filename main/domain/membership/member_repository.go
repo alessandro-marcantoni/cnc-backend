@@ -11,4 +11,5 @@ type MemberRepository interface {
 	GetMembersBySeason(year int64) result.Result[[]Member]
 	GetMembersWhoDidNotPayForServices() []Member
 	GetMembersWhoDidNotPayForMembership() []Member
+	CreateMember(user User, createMembership bool, seasonId *int64, price *float64) result.Result[MemberDetails]
 }

@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"time"
 
 	facilityrental "github.com/alessandro-marcantoni/cnc-backend/main/domain/facility_rental"
 	"github.com/alessandro-marcantoni/cnc-backend/main/domain/membership"
@@ -198,4 +199,71 @@ func ConvertFacilitiesWithStatusToPresentation(domainFacilities []facilityrental
 		}
 	}
 	return presentationFacilities
+}
+
+type CreateMemberData struct {
+	User             membership.User
+	CreateMembership bool
+	SeasonId         *int64
+	Price            *float64
+}
+
+func ConvertCreateMemberRequestToDomain(req CreateMemberRequest) (CreateMemberData, error) {
+	// Parse birth date
+	birthDate, err := parseDate(req.BirthDate)
+	if err != nil {
+		return CreateMemberData{}, fmt.Errorf("invalid birth date: %w", err)
+	}
+
+	// Create email
+	emailResult := membership.NewEmailAddress(req.Email)
+	if !emailResult.IsSuccess() {
+		return CreateMemberData{}, fmt.Errorf("invalid email: %s", emailResult.Error().Error())
+	}
+
+	// Convert phone numbers
+	phoneNumbers := make([]membership.PhoneNumber, 0, len(req.PhoneNumbers))
+	for _, pn := range req.PhoneNumbers {
+		phoneResult := membership.NewPhoneNumber(pn.Prefix, pn.Number)
+		if !phoneResult.IsSuccess() {
+			return CreateMemberData{}, fmt.Errorf("invalid phone number: %s", phoneResult.Error().Error())
+		}
+		phoneNumbers = append(phoneNumbers, phoneResult.Value())
+	}
+
+	// Convert addresses
+	addresses := make([]membership.Address, 0, len(req.Addresses))
+	for _, addr := range req.Addresses {
+		var zipCode *string
+		if addr.ZipCode != "" {
+			zipCode = &addr.ZipCode
+		}
+		addresses = append(addresses, membership.Address{
+			Country: addr.Country,
+			City:    addr.City,
+			ZipCode: zipCode,
+			Street:  addr.Street,
+			Number:  addr.StreetNumber,
+		})
+	}
+
+	user := membership.User{
+		FirstName:    req.FirstName,
+		LastName:     req.LastName,
+		BirthDate:    birthDate,
+		Email:        emailResult.Value(),
+		Addresses:    addresses,
+		PhoneNumbers: phoneNumbers,
+	}
+
+	return CreateMemberData{
+		User:             user,
+		CreateMembership: req.CreateMembership,
+		SeasonId:         req.SeasonId,
+		Price:            req.Price,
+	}, nil
+}
+
+func parseDate(dateStr string) (t time.Time, err error) {
+	return time.Parse("2006-01-02", dateStr)
 }

@@ -4,9 +4,11 @@ SELECT
     m.last_name,
     m.date_of_birth,
     mem.number          AS membership_number,
-    CASE WHEN CURRENT_DATE >= s.starts_at AND CURRENT_DATE < s.ends_at THEN 'CURRENT'
-     WHEN CURRENT_DATE < s.starts_at THEN 'FUTURE'
-     WHEN CURRENT_DATE >= s.ends_at THEN 'PAST'
+    CASE WHEN mp.id IS NOT NULL THEN
+        CASE WHEN CURRENT_DATE >= s.starts_at AND CURRENT_DATE < s.ends_at THEN 'CURRENT'
+         WHEN CURRENT_DATE < s.starts_at THEN 'FUTURE'
+         WHEN CURRENT_DATE >= s.ends_at THEN 'PAST'
+        END
     END AS season,
     s.starts_at AS season_starts_at,
     s.ends_at   AS season_ends_at,
@@ -27,10 +29,10 @@ LEFT JOIN (
         mp.status_id,
         ROW_NUMBER() OVER (
             PARTITION BY mem.member_id
-            ORDER BY mp.season_id DESC
+            ORDER BY mp.season_id DESC NULLS LAST
         ) AS rn
     FROM memberships mem
-    JOIN membership_periods mp
+    LEFT JOIN membership_periods mp
         ON mp.membership_id = mem.id
 ) latest_membership_period
     ON latest_membership_period.member_id = m.id

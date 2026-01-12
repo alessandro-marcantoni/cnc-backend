@@ -62,12 +62,34 @@ func MembersHandler(w http.ResponseWriter, r *http.Request) {
 		presentation.WriteJSON(w, http.StatusOK, members)
 
 	case http.MethodPost:
-		var m presentation.Member
-		if err := json.NewDecoder(r.Body).Decode(&m); err != nil {
-			presentation.WriteError(w, http.StatusBadRequest, "invalid JSON")
+		if memberService == nil {
+			presentation.WriteError(w, http.StatusInternalServerError, "service not initialized")
 			return
 		}
-		presentation.WriteJSON(w, http.StatusCreated, m)
+
+		var req presentation.CreateMemberRequest
+		if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+			presentation.WriteError(w, http.StatusBadRequest, "invalid JSON: "+err.Error())
+			return
+		}
+
+		// Convert presentation request to domain data
+		data, err := presentation.ConvertCreateMemberRequestToDomain(req)
+		if err != nil {
+			presentation.WriteError(w, http.StatusBadRequest, err.Error())
+			return
+		}
+
+		// Create the member
+		result := memberService.CreateMember(data.User, data.CreateMembership, data.SeasonId, data.Price)
+		if !result.IsSuccess() {
+			presentation.WriteError(w, http.StatusInternalServerError, result.Error().Error())
+			return
+		}
+
+		// Convert to presentation and return
+		memberDetails := presentation.ConvertMemberDetailsToPresentation(result.Value())
+		presentation.WriteJSON(w, http.StatusCreated, memberDetails)
 
 	default:
 		w.WriteHeader(http.StatusMethodNotAllowed)

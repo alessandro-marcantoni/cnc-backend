@@ -92,3 +92,15 @@ type FacilityWithStatus struct {
 	IsRented                bool    `json:"isRented"`
 	ExpiresAt               *string `json:"expiresAt,omitempty"`
 }
+
+type CreateMemberRequest struct {
+	FirstName        string        `json:"firstName"`
+	LastName         string        `json:"lastName"`
+	BirthDate        string        `json:"birthDate"`
+	Email            string        `json:"email"`
+	PhoneNumbers     []PhoneNumber `json:"phoneNumbers"`
+	Addresses        []Address     `json:"addresses"`
+	CreateMembership bool          `json:"createMembership"`
+	SeasonId         *int64        `json:"seasonId"`
+	Price            *float64      `json:"price"`
+}
