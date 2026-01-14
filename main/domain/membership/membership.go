@@ -13,6 +13,7 @@ type Membership struct {
 	Id      domain.Id[Membership]
 	Number  int64
 	Status  MembershipInfo
+	Price   float64
 	Payment payment.Payment
 }
 

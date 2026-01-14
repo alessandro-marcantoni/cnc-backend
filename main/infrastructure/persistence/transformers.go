@@ -65,6 +65,7 @@ func MapToMemberFromMemberByIdQuery(queryResult GetMemberByIdQueryResult) result
 		Status                 string       `json:"status"`
 		ExclusionDeliberatedAt *PgTimestamp `json:"exclusion_deliberated_at"`
 		ExcludedAt             *PgTimestamp `json:"excluded_at"`
+		Price                  float64      `json:"price"`
 		Payment                *struct {
 			Amount         float64     `json:"amount"`
 			Currency       string      `json:"currency"`
@@ -130,6 +131,7 @@ func MapToMemberFromMemberByIdQuery(queryResult GetMemberByIdQueryResult) result
 			Id:      domain.Id[membership.Membership]{Value: m.MembershipID},
 			Number:  m.MembershipNumber,
 			Status:  membershipStatus,
+			Price:   m.Price,
 			Payment: paymentInfo,
 		})
 	}
@@ -199,10 +201,16 @@ func MapToMemberFromAllMembersQuery(queryResult GetAllMembersQueryResult) result
 		paymentInfo = payment.PaymentUnpaid{}
 	}
 
+	var price float64
+	if queryResult.Price != nil {
+		price = *queryResult.Price
+	}
+
 	domainMembership := membership.Membership{
 		Id:      domain.Id[membership.Membership]{Value: queryResult.MemberID},
 		Number:  *queryResult.MembershipNumber,
 		Status:  membershipStatus,
+		Price:   price,
 		Payment: paymentInfo,
 	}
 

@@ -15,6 +15,7 @@ type RentedFacility interface {
 	GetValidity() RentalValidity
 	GetPayment() payment.Payment
 	GetType() RentedFacilityType
+	GetPrice() float64
 }
 
 type RentedFacilityType string
@@ -29,6 +30,7 @@ type SimpleRentedFacility struct {
 	MemberId domain.Id[membership.Member]
 	Facility domain.Id[Facility]
 	Validity RentalValidity
+	Price    float64
 	Payment  payment.Payment
 }
 
@@ -37,6 +39,7 @@ type RentedFacilityWithBoat struct {
 	MemberId domain.Id[membership.Member]
 	Facility domain.Id[Facility]
 	Validity RentalValidity
+	Price    float64
 	Payment  payment.Payment
 	BoatInfo BoatInfo
 }
@@ -61,6 +64,10 @@ func (s SimpleRentedFacility) GetValidity() RentalValidity {
 	return s.Validity
 }
 
+func (s SimpleRentedFacility) GetPrice() float64 {
+	return s.Price
+}
+
 func (s SimpleRentedFacility) GetPayment() payment.Payment {
 	return s.Payment
 }
@@ -83,6 +90,10 @@ func (r RentedFacilityWithBoat) GetFacility() domain.Id[Facility] {
 
 func (r RentedFacilityWithBoat) GetValidity() RentalValidity {
 	return r.Validity
+}
+
+func (r RentedFacilityWithBoat) GetPrice() float64 {
+	return r.Price
 }
 
 func (r RentedFacilityWithBoat) GetPayment() payment.Payment {

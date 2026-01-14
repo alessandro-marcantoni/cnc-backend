@@ -135,6 +135,7 @@ func (r *SQLFacilityRepository) GetFacilitiesRentedByMember(memberId domain.Id[m
 			&dto.RentedFacilityID,
 			&dto.RentedAt,
 			&dto.ExpiresAt,
+			&dto.Price,
 			&dto.FacilityID,
 			&dto.FacilityIdentifier,
 			&dto.FacilityTypeID,
@@ -183,6 +184,7 @@ func (r *SQLFacilityRepository) GetRentedFacilityDTOs(memberId int64, season str
 			&dto.RentedFacilityID,
 			&dto.RentedAt,
 			&dto.ExpiresAt,
+			&dto.Price,
 			&dto.FacilityID,
 			&dto.FacilityIdentifier,
 			&dto.FacilityTypeID,
@@ -238,6 +240,7 @@ func convertDTOToRentedFacility(dto GetRentedFacilitiesByMemberQueryResult) faci
 			MemberId: domain.NewId[membership.Member](0), // Will be filled from query param
 			Facility: facility.Id,
 			Validity: validity,
+			Price:    dto.Price,
 			Payment:  nil, // Payment info not included in this query
 			BoatInfo: boatInfo,
 		}
@@ -249,6 +252,7 @@ func convertDTOToRentedFacility(dto GetRentedFacilitiesByMemberQueryResult) faci
 		MemberId: domain.NewId[membership.Member](0), // Will be filled from query param
 		Facility: facility.Id,
 		Validity: validity,
+		Price:    dto.Price,
 		Payment:  nil, // Payment info not included in this query
 	}
 }

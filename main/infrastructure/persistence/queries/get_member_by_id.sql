@@ -7,6 +7,7 @@ WITH membership_details AS (
         mp.exclusion_deliberated_at,
         mp.excluded_at,
         mp.status_id,
+        mp.price,
         p.amount AS payment_amount,
         p.currency AS payment_currency,
         p.paid_at AS payment_date,
@@ -50,6 +51,7 @@ SELECT
             'exclusion_deliberated_at', md.exclusion_deliberated_at,
             'excluded_at', md.excluded_at,
             'status', ms.status,
+            'price', md.price,
             'payment', CASE
                 WHEN md.payment_amount IS NOT NULL THEN
                     jsonb_build_object(

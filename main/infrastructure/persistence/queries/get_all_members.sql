@@ -14,6 +14,7 @@ SELECT
     s.ends_at   AS season_ends_at,
     ms.status AS membership_status,
     mp.exclusion_deliberated_at,
+    mp.price   AS price,
     p.amount   AS amount_paid,
     p.paid_at  AS paid_at,
     p.currency AS currency

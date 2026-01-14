@@ -28,6 +28,7 @@ type Membership struct {
 	ValidFrom string   `json:"validFrom"`
 	ExpiresAt string   `json:"expiresAt"`
 	Payment   *Payment `json:"payment"`
+	Price     float64  `json:"price"`
 }
 
 type BoatInfo struct {
@@ -44,6 +45,7 @@ type RentedFacility struct {
 	FacilityTypeDescription string    `json:"facilityTypeDescription"`
 	RentedAt                string    `json:"rentedAt"`
 	ExpiresAt               string    `json:"expiresAt"`
+	Price                   float64   `json:"price"`
 	Payment                 *Payment  `json:"payment"`
 	BoatInfo                *BoatInfo `json:"boatInfo"`
 }

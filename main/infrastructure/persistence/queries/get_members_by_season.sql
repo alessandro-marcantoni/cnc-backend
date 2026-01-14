@@ -7,6 +7,7 @@ SELECT
     s.starts_at AS season_starts_at,
     s.ends_at AS season_ends_at,
     mp.exclusion_deliberated_at,
+    mp.price AS price,
     ms.status AS membership_status,
     p.amount AS amount_paid,
     p.paid_at AS paid_at,

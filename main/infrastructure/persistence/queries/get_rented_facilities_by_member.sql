@@ -2,6 +2,7 @@ SELECT
     rf.id                 AS rented_facility_id,
     rf.rented_at,
     rf.expires_at,
+    rf.price,
 
     f.id                  AS facility_id,
     f.identifier          AS facility_identifier,

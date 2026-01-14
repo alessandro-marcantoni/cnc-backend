@@ -217,6 +217,7 @@ func RentedFacilitiesHandler(w http.ResponseWriter, r *http.Request) {
 			FacilityTypeDescription: dto.FacilityTypeDesc,
 			RentedAt:                dto.RentedAt.Format("2006-01-02T15:04:05Z07:00"),
 			ExpiresAt:               dto.ExpiresAt.Format("2006-01-02"),
+			Price:                   dto.Price,
 			Payment:                 payment,
 			BoatInfo:                boatInfo,
 		}

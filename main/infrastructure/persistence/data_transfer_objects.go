@@ -27,6 +27,7 @@ type GetAllMembersQueryResult struct {
 	SeasonStartsAt         *time.Time `json:"season_starts_at"`
 	SeasonEndsAt           *time.Time `json:"season_ends_at"`
 	ExclusionDeliberatedAt *time.Time `json:"exclusion_deliberated_at"`
+	Price                  *float64   `json:"price"`
 	AmountPaid             *float64   `json:"amount_paid"`
 	PaidAt                 *time.Time `json:"paid_at"`
 	Currency               *string    `json:"currency"`
@@ -42,6 +43,7 @@ type GetMembersBySeasonQueryResult struct {
 	SeasonStartsAt         time.Time  `json:"season_starts_at"`
 	SeasonEndsAt           time.Time  `json:"season_ends_at"`
 	ExclusionDeliberatedAt *time.Time `json:"exclusion_deliberated_at"`
+	Price                  *float64   `json:"price"`
 	AmountPaid             *float64   `json:"amount_paid"`
 	PaidAt                 *time.Time `json:"paid_at"`
 	Currency               *string    `json:"currency"`
@@ -51,6 +53,7 @@ type GetRentedFacilitiesByMemberQueryResult struct {
 	RentedFacilityID   int64      `json:"rented_facility_id"`
 	RentedAt           time.Time  `json:"rented_at"`
 	ExpiresAt          time.Time  `json:"expires_at"`
+	Price              float64    `json:"price"`
 	FacilityID         int64      `json:"facility_id"`
 	FacilityIdentifier string     `json:"facility_identifier"`
 	FacilityTypeID     int64      `json:"facility_type_id"`

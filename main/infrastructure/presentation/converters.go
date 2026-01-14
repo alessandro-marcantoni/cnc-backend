@@ -74,6 +74,7 @@ func convertMembershipToPresentation(m membership.Membership) Membership {
 		Status:    string(m.Status.GetStatus()),
 		ValidFrom: m.Status.GetValidFromDate().Format("2006-01-02"),
 		ExpiresAt: m.Status.GetValidUntilDate().Format("2006-01-02"),
+		Price:     m.Price,
 		Payment:   p,
 	}
 
@@ -147,6 +148,7 @@ func ConvertRentedFacilityToPresentation(rf facilityrental.RentedFacility, facil
 		FacilityName:            facilityTypeName,
 		FacilityTypeDescription: facilityTypeDesc,
 		RentedAt:                rentedAt,
+		Price:                   rf.GetPrice(),
 		ExpiresAt:               rf.GetValidity().ToDate.Format("2006-01-02"),
 		BoatInfo:                nil,
 	}
