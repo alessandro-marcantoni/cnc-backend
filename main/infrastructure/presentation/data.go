@@ -104,3 +104,11 @@ type CreateMemberRequest struct {
 	SeasonId         *int64        `json:"seasonId"`
 	Price            *float64      `json:"price"`
 }
+
+type AddMembershipRequest struct {
+	SeasonId       int64   `json:"seasonId"`
+	SeasonStartsAt string  `json:"seasonStartsAt"`
+	SeasonEndsAt   string  `json:"seasonEndsAt"`
+	Price          float64 `json:"price"`
+	MemberId       int64   `json:"memberId"`
+}

@@ -269,3 +269,55 @@ func FacilitiesByTypeHandler(w http.ResponseWriter, r *http.Request) {
 	presentationFacilities := presentation.ConvertFacilitiesWithStatusToPresentation(facilities)
 	presentation.WriteJSON(w, http.StatusOK, presentationFacilities)
 }
+
+func MembershipsHandler(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPost {
+		w.WriteHeader(http.StatusMethodNotAllowed)
+		return
+	}
+
+	if memberService == nil {
+		presentation.WriteError(w, http.StatusInternalServerError, "service not initialized")
+		return
+	}
+
+	var req presentation.AddMembershipRequest
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		presentation.WriteError(w, http.StatusBadRequest, "invalid JSON: "+err.Error())
+		return
+	}
+
+	// Validate required fields
+	if req.MemberId == 0 {
+		presentation.WriteError(w, http.StatusBadRequest, "memberId is required")
+		return
+	}
+	if req.SeasonId == 0 {
+		presentation.WriteError(w, http.StatusBadRequest, "seasonId is required")
+		return
+	}
+	if req.SeasonStartsAt == "" {
+		presentation.WriteError(w, http.StatusBadRequest, "seasonStartsAt is required")
+		return
+	}
+	if req.SeasonEndsAt == "" {
+		presentation.WriteError(w, http.StatusBadRequest, "seasonEndsAt is required")
+		return
+	}
+	if req.Price <= 0 {
+		presentation.WriteError(w, http.StatusBadRequest, "price must be greater than 0")
+		return
+	}
+
+	// Add membership period
+	memberId := domain.Id[membership.Member]{Value: req.MemberId}
+	result := memberService.AddMembership(memberId, req.SeasonId, req.SeasonStartsAt, req.SeasonEndsAt, req.Price)
+	if !result.IsSuccess() {
+		presentation.WriteError(w, http.StatusInternalServerError, result.Error().Error())
+		return
+	}
+
+	// Convert to presentation and return
+	memberDetails := presentation.ConvertMemberDetailsToPresentation(result.Value())
+	presentation.WriteJSON(w, http.StatusCreated, memberDetails)
+}

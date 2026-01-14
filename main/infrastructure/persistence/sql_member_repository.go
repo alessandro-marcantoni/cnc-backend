@@ -297,3 +297,49 @@ func (r *SQLMemberRepository) CreateMember(user m.User, createMembership bool, s
 		Memberships: []m.Membership{},
 	})
 }
+
+func (r *SQLMemberRepository) AddMembership(memberId domain.Id[m.Member], seasonId int64, seasonStartsAt string, seasonEndsAt string, price float64) result.Result[m.MemberDetails] {
+	ctx := context.Background()
+
+	// Begin transaction
+	tx, err := r.db.BeginTx(ctx, nil)
+	if err != nil {
+		return result.Err[m.MemberDetails](errors.RepositoryError{Description: "failed to begin transaction: " + err.Error()})
+	}
+	defer tx.Rollback()
+
+	// Get the membership_id for this member
+	var membershipId int64
+	err = tx.QueryRowContext(ctx, "SELECT id FROM memberships WHERE member_id = $1", memberId.Value).Scan(&membershipId)
+	if err != nil {
+		return result.Err[m.MemberDetails](errors.RepositoryError{Description: "failed to get membership id: " + err.Error()})
+	}
+
+	// Insert membership period with status_id = 1 (ACTIVE)
+	_, err = tx.ExecContext(ctx, insertMembershipPeriodQuery,
+		membershipId,
+		seasonStartsAt,
+		seasonEndsAt,
+		1, // status_id for ACTIVE
+		seasonId,
+		price,
+	)
+	if err != nil {
+		return result.Err[m.MemberDetails](errors.RepositoryError{Description: "failed to insert membership period: " + err.Error()})
+	}
+
+	// Commit transaction
+	if err = tx.Commit(); err != nil {
+		return result.Err[m.MemberDetails](errors.RepositoryError{Description: "failed to commit transaction: " + err.Error()})
+	}
+
+	// Fetch season code to query the member
+	var seasonCode string
+	err = r.db.QueryRowContext(ctx, "SELECT code FROM seasons WHERE id = $1", seasonId).Scan(&seasonCode)
+	if err != nil {
+		return result.Err[m.MemberDetails](errors.RepositoryError{Description: "failed to get season code: " + err.Error()})
+	}
+
+	// Fetch and return the updated member details
+	return r.GetMemberById(memberId, seasonCode)
+}
