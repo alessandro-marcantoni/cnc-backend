@@ -16,5 +16,6 @@ func NewRouter() http.Handler {
 	mux.HandleFunc("/api/v1.0/facilities/rented", RentedFacilitiesHandler)
 
 	router := cors(mux)
+	router = loggingMiddleware(router)
 	return withMiddleware(router)
 }
