@@ -32,7 +32,8 @@ CREATE TABLE IF NOT EXISTS addresses (
     country VARCHAR(100) NOT NULL,
     city VARCHAR(100) NOT NULL,
     street VARCHAR(255) NOT NULL,
-    street_number VARCHAR(50) NOT NULL
+    street_number VARCHAR(50) NOT NULL,
+    zip_code VARCHAR(20) NOT NULL
 );
 
 CREATE INDEX IF NOT EXISTS idx_addresses_member
@@ -77,10 +78,9 @@ CREATE TABLE IF NOT EXISTS rented_facilities (
     id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
     facility_id BIGINT NOT NULL REFERENCES facilities(id),
     member_id BIGINT NOT NULL REFERENCES members(id),
-    rented_at TIMESTAMP NOT NULL DEFAULT now(),
-    expires_at TIMESTAMP NOT NULL,
     season_id BIGINT NOT NULL REFERENCES seasons(id),
     price NUMERIC(10, 2) NOT NULL CHECK (price >= 0),
+    currency CHAR(3) NOT NULL DEFAULT 'EUR',
     CHECK (expires_at > rented_at)
 );
 
@@ -89,9 +89,6 @@ ON rented_facilities(member_id);
 
 CREATE INDEX IF NOT EXISTS idx_rented_facility_facility
 ON rented_facilities(facility_id);
-
-CREATE INDEX IF NOT EXISTS idx_rented_facilities_expires
-ON rented_facilities(facility_id, expires_at);
 
 -- =========================
 -- MEMBERSHIPS
@@ -115,28 +112,20 @@ CREATE TABLE IF NOT EXISTS membership_periods (
     id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
     membership_id BIGINT NOT NULL
         REFERENCES memberships(id) ON DELETE CASCADE,
-    valid_from TIMESTAMP NOT NULL,
-    expires_at TIMESTAMP NOT NULL,
     status_id BIGINT NOT NULL
         REFERENCES membership_statuses(id),
     exclusion_deliberated_at TIMESTAMP,
     season_id BIGINT NOT NULL REFERENCES seasons(id),
     price NUMERIC(10, 2) NOT NULL CHECK (price >= 0),
-    CHECK (expires_at > valid_from),
-    UNIQUE (membership_id, valid_from)
+    currency CHAR(3) NOT NULL DEFAULT 'EUR',
+    UNIQUE (membership_id, season_id)
 );
-
-CREATE UNIQUE INDEX one_membership_per_season
-ON membership_periods (membership_id, season_id);
 
 CREATE INDEX IF NOT EXISTS idx_membership_periods_membership
 ON membership_periods(membership_id);
 
 CREATE INDEX IF NOT EXISTS idx_membership_periods_status
 ON membership_periods(status_id);
-
-CREATE INDEX IF NOT EXISTS idx_membership_periods_validity
-ON membership_periods(valid_from, expires_at);
 
 -- =========================
 -- PAYMENTS (POLYMORPHIC)
