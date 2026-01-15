@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/alessandro-marcantoni/cnc-backend/main/domain"
+	facilityrental "github.com/alessandro-marcantoni/cnc-backend/main/domain/facility_rental"
 	"github.com/alessandro-marcantoni/cnc-backend/main/domain/membership"
 	"github.com/alessandro-marcantoni/cnc-backend/main/domain/payment"
 	"github.com/alessandro-marcantoni/cnc-backend/main/shared/errors"
@@ -280,4 +281,54 @@ func MapToMemberFromQueryBySeason(queryResult GetMembersBySeasonQueryResult) res
 		},
 		Membership: domainMembership,
 	})
+}
+
+func ConvertDTOToRentedFacility(dto GetRentedFacilitiesByMemberQueryResult) facilityrental.RentedFacility {
+	facilityType := facilityrental.FacilityType{
+		Id:             domain.NewId[facilityrental.FacilityType](dto.FacilityTypeID),
+		FacilityName:   facilityrental.FacilityName(dto.FacilityType),
+		Description:    dto.FacilityTypeDesc,
+		SuggestedPrice: dto.SuggestedPrice,
+	}
+
+	facility := facilityrental.Facility{
+		Id:           domain.NewId[facilityrental.Facility](dto.FacilityID),
+		Identifier:   dto.FacilityIdentifier,
+		FacilityType: facilityType,
+	}
+
+	validity := facilityrental.RentalValidity{
+		ToDate:   dto.ExpiresAt,
+		FromDate: dto.RentedAt,
+	}
+
+	// Check if this is a boat facility (has boat info)
+	if dto.BoatID != nil && dto.BoatName != nil && dto.LengthMeters != nil && dto.WidthMeters != nil {
+		boatInfo := facilityrental.BoatInfo{
+			Name:          *dto.BoatName,
+			LengthMeters:  *dto.LengthMeters,
+			WidthMeters:   *dto.WidthMeters,
+			InsuranceInfo: facilityrental.NoBoatInsurance{},
+		}
+
+		return facilityrental.RentedFacilityWithBoat{
+			Id:       domain.NewId[facilityrental.RentedFacility](dto.RentedFacilityID),
+			MemberId: domain.NewId[membership.Member](0), // Will be filled from query param
+			Facility: facility,
+			Validity: validity,
+			Price:    dto.Price,
+			Payment:  nil, // Payment info not included in this query
+			BoatInfo: boatInfo,
+		}
+	}
+
+	// Simple facility without boat
+	return facilityrental.SimpleRentedFacility{
+		Id:       domain.NewId[facilityrental.RentedFacility](dto.RentedFacilityID),
+		MemberId: domain.NewId[membership.Member](0), // Will be filled from query param
+		Facility: facility,
+		Validity: validity,
+		Price:    dto.Price,
+		Payment:  nil, // Payment info not included in this query
+	}
 }

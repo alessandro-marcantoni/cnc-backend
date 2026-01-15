@@ -126,10 +126,6 @@ CREATE TABLE IF NOT EXISTS membership_periods (
     UNIQUE (membership_id, valid_from)
 );
 
-CREATE UNIQUE INDEX IF NOT EXISTS one_active_period_per_membership
-ON membership_periods(membership_id)
-WHERE status_id = 1;
-
 CREATE UNIQUE INDEX one_membership_per_season
 ON membership_periods (membership_id, season_id);
 

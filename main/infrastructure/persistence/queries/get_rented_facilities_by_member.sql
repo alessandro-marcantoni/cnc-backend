@@ -35,5 +35,5 @@ LEFT JOIN payments p
 LEFT JOIN seasons s
     ON s.id = rf.season_id
 WHERE rf.member_id = $1
-AND s.code = $2
+AND s.id = $2
 ORDER BY rf.rented_at DESC;

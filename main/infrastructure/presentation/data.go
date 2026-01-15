@@ -114,3 +114,12 @@ type AddMembershipRequest struct {
 	Price          float64 `json:"price"`
 	MemberId       int64   `json:"memberId"`
 }
+
+type RentFacilityRequest struct {
+	FacilityId int64   `json:"facilityId"`
+	MemberId   int64   `json:"memberId"`
+	RentedAt   string  `json:"rentedAt"`
+	ExpiresAt  string  `json:"expiresAt"`
+	SeasonId   int64   `json:"seasonId"`
+	Price      float64 `json:"price"`
+}

@@ -140,14 +140,14 @@ func ConvertMemberToSummary(domainMember membership.Member) MemberSummary {
 	}
 }
 
-func ConvertRentedFacilityToPresentation(rf facilityrental.RentedFacility, facilityIdentifier, facilityTypeName, facilityTypeDesc string, rentedAt string) RentedFacility {
+func ConvertRentedFacilityToPresentation(rf facilityrental.RentedFacility) RentedFacility {
 	rentedFacility := RentedFacility{
 		ID:                      rf.GetId().Value,
-		FacilityID:              rf.GetFacility().Value,
-		FacilityIdentifier:      facilityIdentifier,
-		FacilityName:            facilityTypeName,
-		FacilityTypeDescription: facilityTypeDesc,
-		RentedAt:                rentedAt,
+		FacilityID:              rf.GetFacility().Id.Value,
+		FacilityIdentifier:      rf.GetFacility().Identifier,
+		FacilityName:            rf.GetFacility().FacilityType.FacilityName.String(),
+		FacilityTypeDescription: rf.GetFacility().FacilityType.Description,
+		RentedAt:                rf.GetValidity().FromDate.Format("2006-01-02"),
 		Price:                   rf.GetPrice(),
 		ExpiresAt:               rf.GetValidity().ToDate.Format("2006-01-02"),
 		BoatInfo:                nil,

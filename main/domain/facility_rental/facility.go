@@ -6,5 +6,6 @@ import (
 
 type Facility struct {
 	Id           domain.Id[Facility]
+	Identifier   string
 	FacilityType FacilityType
 }

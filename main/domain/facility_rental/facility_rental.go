@@ -11,7 +11,7 @@ import (
 type RentedFacility interface {
 	GetId() domain.Id[RentedFacility]
 	GetMemberId() domain.Id[membership.Member]
-	GetFacility() domain.Id[Facility]
+	GetFacility() Facility
 	GetValidity() RentalValidity
 	GetPayment() payment.Payment
 	GetType() RentedFacilityType
@@ -28,7 +28,7 @@ const (
 type SimpleRentedFacility struct {
 	Id       domain.Id[RentedFacility]
 	MemberId domain.Id[membership.Member]
-	Facility domain.Id[Facility]
+	Facility Facility
 	Validity RentalValidity
 	Price    float64
 	Payment  payment.Payment
@@ -37,7 +37,7 @@ type SimpleRentedFacility struct {
 type RentedFacilityWithBoat struct {
 	Id       domain.Id[RentedFacility]
 	MemberId domain.Id[membership.Member]
-	Facility domain.Id[Facility]
+	Facility Facility
 	Validity RentalValidity
 	Price    float64
 	Payment  payment.Payment
@@ -45,7 +45,8 @@ type RentedFacilityWithBoat struct {
 }
 
 type RentalValidity struct {
-	ToDate time.Time
+	FromDate time.Time
+	ToDate   time.Time
 }
 
 func (s SimpleRentedFacility) GetId() domain.Id[RentedFacility] {
@@ -56,7 +57,7 @@ func (s SimpleRentedFacility) GetMemberId() domain.Id[membership.Member] {
 	return s.MemberId
 }
 
-func (s SimpleRentedFacility) GetFacility() domain.Id[Facility] {
+func (s SimpleRentedFacility) GetFacility() Facility {
 	return s.Facility
 }
 
@@ -84,7 +85,7 @@ func (r RentedFacilityWithBoat) GetMemberId() domain.Id[membership.Member] {
 	return r.MemberId
 }
 
-func (r RentedFacilityWithBoat) GetFacility() domain.Id[Facility] {
+func (r RentedFacilityWithBoat) GetFacility() Facility {
 	return r.Facility
 }
 

@@ -1,14 +1,15 @@
 package persistence
 
 import (
+	"context"
 	"database/sql"
 	_ "embed"
-	"errors"
 	"time"
 
 	"github.com/alessandro-marcantoni/cnc-backend/main/domain"
 	facilityrental "github.com/alessandro-marcantoni/cnc-backend/main/domain/facility_rental"
 	"github.com/alessandro-marcantoni/cnc-backend/main/domain/membership"
+	"github.com/alessandro-marcantoni/cnc-backend/main/shared/errors"
 	"github.com/alessandro-marcantoni/cnc-backend/main/shared/result"
 )
 
@@ -20,6 +21,9 @@ var getFacilitiesCatalogQuery string
 
 //go:embed queries/get_facilities_by_type.sql
 var getFacilitiesByTypeQuery string
+
+//go:embed queries/insert_rented_facility.sql
+var insertRentedFacilityQuery string
 
 type SQLFacilityRepository struct {
 	db *sql.DB
@@ -120,8 +124,8 @@ func (r *SQLFacilityRepository) GetAvailableFacilities(serviceType facilityrenta
 	return []facilityrental.Facility{}
 }
 
-func (r *SQLFacilityRepository) GetFacilitiesRentedByMember(memberId domain.Id[membership.User]) []facilityrental.RentedFacility {
-	rows, err := r.db.Query(getRentedFacilitiesByMemberQuery, memberId.Value)
+func (r *SQLFacilityRepository) GetFacilitiesRentedByMember(memberId domain.Id[membership.User], season int64) []facilityrental.RentedFacility {
+	rows, err := r.db.Query(getRentedFacilitiesByMemberQuery, memberId.Value, season)
 	if err != nil {
 		return []facilityrental.RentedFacility{}
 	}
@@ -157,102 +161,55 @@ func (r *SQLFacilityRepository) GetFacilitiesRentedByMember(memberId domain.Id[m
 			continue
 		}
 
-		rentedFacility := convertDTOToRentedFacility(dto)
+		rentedFacility := ConvertDTOToRentedFacility(dto)
 		rentedFacilities = append(rentedFacilities, rentedFacility)
 	}
 
 	return rentedFacilities
 }
 
-func (r *SQLFacilityRepository) RentFacility(memberId domain.Id[membership.User], facilityId domain.Id[facilityrental.Facility], boatInfo *domain.Id[facilityrental.BoatInfo]) result.Result[facilityrental.RentedFacility] {
-	// TODO: Implement this method
-	return result.Err[facilityrental.RentedFacility](errors.New("method not implemented"))
-}
+func (r *SQLFacilityRepository) RentFacility(
+	memberId domain.Id[membership.User],
+	facilityId domain.Id[facilityrental.Facility],
+	validity facilityrental.RentalValidity,
+	season int64,
+	price float64,
+	boatInfo *facilityrental.BoatInfo,
+) result.Result[facilityrental.RentedFacility] {
+	ctx := context.Background()
 
-func (r *SQLFacilityRepository) GetRentedFacilityDTOs(memberId int64, season string) ([]GetRentedFacilitiesByMemberQueryResult, error) {
-	rows, err := r.db.Query(getRentedFacilitiesByMemberQuery, memberId, season)
+	// Begin transaction
+	tx, err := r.db.BeginTx(ctx, nil)
 	if err != nil {
-		return nil, err
+		return result.Err[facilityrental.RentedFacility](errors.RepositoryError{Description: "failed to begin transaction: " + err.Error()})
 	}
-	defer rows.Close()
+	defer tx.Rollback()
 
-	var dtos []GetRentedFacilitiesByMemberQueryResult
-
-	for rows.Next() {
-		var dto GetRentedFacilitiesByMemberQueryResult
-		err := rows.Scan(
-			&dto.RentedFacilityID,
-			&dto.RentedAt,
-			&dto.ExpiresAt,
-			&dto.Price,
-			&dto.FacilityID,
-			&dto.FacilityIdentifier,
-			&dto.FacilityTypeID,
-			&dto.FacilityType,
-			&dto.FacilityTypeDesc,
-			&dto.SuggestedPrice,
-			&dto.BoatID,
-			&dto.BoatName,
-			&dto.LengthMeters,
-			&dto.WidthMeters,
-			&dto.PaymentID,
-			&dto.PaymentAmount,
-			&dto.PaymentCurrency,
-			&dto.PaymentPaidAt,
-			&dto.PaymentMethod,
-			&dto.TransactionRef,
-		)
-		if err != nil {
-			continue
-		}
-		dtos = append(dtos, dto)
+	// Insert facility rental
+	var rentedFacilityId int64
+	err = tx.QueryRowContext(ctx, insertRentedFacilityQuery,
+		facilityId.Value,
+		memberId.Value,
+		validity.FromDate.Format("2006-01-02"),
+		validity.ToDate.Format("2006-01-02"),
+		season,
+		price,
+	).Scan(&rentedFacilityId)
+	if err != nil {
+		return result.Err[facilityrental.RentedFacility](errors.RepositoryError{Description: "failed to insert facility rental: " + err.Error()})
 	}
 
-	return dtos, nil
-}
-
-func convertDTOToRentedFacility(dto GetRentedFacilitiesByMemberQueryResult) facilityrental.RentedFacility {
-	facilityType := facilityrental.FacilityType{
-		FacilityName:   facilityrental.ToFacilityName(dto.FacilityType),
-		SuggestedPrice: dto.SuggestedPrice,
+	// Commit transaction
+	if err = tx.Commit(); err != nil {
+		return result.Err[facilityrental.RentedFacility](errors.RepositoryError{Description: "failed to commit transaction: " + err.Error()})
 	}
 
-	facility := facilityrental.Facility{
-		Id:           domain.NewId[facilityrental.Facility](dto.FacilityID),
-		FacilityType: facilityType,
-	}
-
-	validity := facilityrental.RentalValidity{
-		ToDate: dto.ExpiresAt,
-	}
-
-	// Check if this is a boat facility (has boat info)
-	if dto.BoatID != nil && dto.BoatName != nil && dto.LengthMeters != nil && dto.WidthMeters != nil {
-		boatInfo := facilityrental.BoatInfo{
-			Name:          *dto.BoatName,
-			LengthMeters:  *dto.LengthMeters,
-			WidthMeters:   *dto.WidthMeters,
-			InsuranceInfo: facilityrental.NoBoatInsurance{},
-		}
-
-		return facilityrental.RentedFacilityWithBoat{
-			Id:       domain.NewId[facilityrental.RentedFacility](dto.RentedFacilityID),
-			MemberId: domain.NewId[membership.Member](0), // Will be filled from query param
-			Facility: facility.Id,
-			Validity: validity,
-			Price:    dto.Price,
-			Payment:  nil, // Payment info not included in this query
-			BoatInfo: boatInfo,
+	rentedFacilities := r.GetFacilitiesRentedByMember(memberId, season)
+	for _, rentedFacility := range rentedFacilities {
+		if rentedFacility.GetId().Value == rentedFacilityId {
+			return result.Ok(rentedFacility)
 		}
 	}
 
-	// Simple facility without boat
-	return facilityrental.SimpleRentedFacility{
-		Id:       domain.NewId[facilityrental.RentedFacility](dto.RentedFacilityID),
-		MemberId: domain.NewId[membership.Member](0), // Will be filled from query param
-		Facility: facility.Id,
-		Validity: validity,
-		Price:    dto.Price,
-		Payment:  nil, // Payment info not included in this query
-	}
+	return result.Err[facilityrental.RentedFacility](errors.RepositoryError{Description: "failed to retrieve inserted facility id"})
 }

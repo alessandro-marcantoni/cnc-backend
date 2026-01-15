@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/alessandro-marcantoni/cnc-backend/main/domain"
 	facilityrental "github.com/alessandro-marcantoni/cnc-backend/main/domain/facility_rental"
@@ -17,14 +18,13 @@ import (
 
 var (
 	memberService *membership.MemberManagementService
-	facilityRepo  *persistence.SQLFacilityRepository
 	rentalService *facilityrental.RentalManagementService
 )
 
 func InitializeServices(db *sql.DB) {
-	memberRepository := persistence.NewSQLMemberRepository(db)
+	var memberRepository = persistence.NewSQLMemberRepository(db)
 	memberService = membership.NewMemberManagementService(memberRepository)
-	facilityRepo = persistence.NewSQLFacilityRepository(db)
+	facilityRepo := persistence.NewSQLFacilityRepository(db)
 	rentalService = facilityrental.NewRentalManagementService(facilityRepo)
 }
 
@@ -140,90 +140,124 @@ func MemberByIDHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func RentedFacilitiesHandler(w http.ResponseWriter, r *http.Request) {
-	if r.Method != http.MethodGet {
+	switch r.Method {
+	case http.MethodGet:
+		if rentalService == nil {
+			presentation.WriteError(w, http.StatusInternalServerError, "service not initialized")
+			return
+		}
+
+		// Get member_id from query parameter
+		memberIdStr := r.URL.Query().Get("member_id")
+		if memberIdStr == "" {
+			presentation.WriteError(w, http.StatusBadRequest, "missing member_id query parameter")
+			return
+		}
+
+		memberIdValue, err := strconv.ParseInt(memberIdStr, 10, 64)
+		if err != nil {
+			presentation.WriteError(w, http.StatusBadRequest, "invalid member_id format")
+			return
+		}
+		memberId := domain.NewId[membership.User](memberIdValue)
+
+		// Get season from query parameter
+		season := r.URL.Query().Get("season")
+		seasonId, err := strconv.ParseInt(season, 10, 64)
+		if err != nil {
+			presentation.WriteError(w, http.StatusBadRequest, "missing season query parameter")
+			return
+		}
+
+		// Get DTOs from repository
+		rentedFacilities := rentalService.GetFacilitiesRentedByMember(memberId, seasonId)
+
+		// Convert DTOs to presentation models
+		rentedFacilitiesDTOs := make([]presentation.RentedFacility, len(rentedFacilities))
+		for i, rentedFacility := range rentedFacilities {
+			rentedFacilitiesDTOs[i] = presentation.ConvertRentedFacilityToPresentation(rentedFacility)
+		}
+
+		presentation.WriteJSON(w, http.StatusOK, rentedFacilitiesDTOs)
+
+	case http.MethodPost:
+		if rentalService == nil {
+			presentation.WriteError(w, http.StatusInternalServerError, "service not initialized")
+			return
+		}
+
+		var req presentation.RentFacilityRequest
+		if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+			presentation.WriteError(w, http.StatusBadRequest, "invalid JSON: "+err.Error())
+			return
+		}
+
+		// Validate required fields
+		if req.FacilityId == 0 {
+			presentation.WriteError(w, http.StatusBadRequest, "facilityId is required")
+			return
+		}
+		if req.MemberId == 0 {
+			presentation.WriteError(w, http.StatusBadRequest, "memberId is required")
+			return
+		}
+		if req.SeasonId == 0 {
+			presentation.WriteError(w, http.StatusBadRequest, "seasonId is required")
+			return
+		}
+		if req.RentedAt == "" {
+			presentation.WriteError(w, http.StatusBadRequest, "seasonStartsAt is required")
+			return
+		}
+		if req.ExpiresAt == "" {
+			presentation.WriteError(w, http.StatusBadRequest, "seasonEndsAt is required")
+			return
+		}
+		if req.Price < 0 {
+			presentation.WriteError(w, http.StatusBadRequest, "price must be greater than 0")
+			return
+		}
+
+		rentedAt, err := time.Parse("2006-01-02", req.RentedAt)
+		if err != nil {
+			presentation.WriteError(w, http.StatusBadRequest, "rentedAt date format not valid")
+			return
+		}
+		expiresAt, err := time.Parse("2006-01-02", req.ExpiresAt)
+		if err != nil {
+			presentation.WriteError(w, http.StatusBadRequest, "expiresAt date format not valid")
+			return
+		}
+
+		memberId := domain.Id[membership.User]{Value: req.MemberId}
+		facilityId := domain.Id[facilityrental.Facility]{Value: req.FacilityId}
+		var boatInfo *facilityrental.BoatInfo = nil
+
+		// Rent facility
+		result := rentalService.RentService(
+			facilityId,
+			memberId,
+			req.SeasonId,
+			facilityrental.RentalValidity{
+				FromDate: rentedAt,
+				ToDate:   expiresAt,
+			},
+			req.Price,
+			boatInfo,
+		)
+		if !result.IsSuccess() {
+			presentation.WriteError(w, http.StatusInternalServerError, result.Error().Error())
+			return
+		}
+
+		// Convert to presentation and return
+		rentedFacility := presentation.ConvertRentedFacilityToPresentation(result.Value())
+		presentation.WriteJSON(w, http.StatusCreated, rentedFacility)
+
+	default:
 		w.WriteHeader(http.StatusMethodNotAllowed)
 		return
 	}
-
-	if facilityRepo == nil {
-		presentation.WriteError(w, http.StatusInternalServerError, "service not initialized")
-		return
-	}
-
-	// Get member_id from query parameter
-	memberIdStr := r.URL.Query().Get("member_id")
-	if memberIdStr == "" {
-		presentation.WriteError(w, http.StatusBadRequest, "missing member_id query parameter")
-		return
-	}
-
-	memberId, err := strconv.ParseInt(memberIdStr, 10, 64)
-	if err != nil {
-		presentation.WriteError(w, http.StatusBadRequest, "invalid member_id format")
-		return
-	}
-
-	// Get season from query parameter
-	season := r.URL.Query().Get("season")
-	if season == "" {
-		presentation.WriteError(w, http.StatusBadRequest, "missing season query parameter")
-		return
-	}
-
-	// Get DTOs from repository
-	dtos, err := facilityRepo.GetRentedFacilityDTOs(memberId, season)
-	if err != nil {
-		presentation.WriteError(w, http.StatusInternalServerError, "failed to retrieve rented facilities")
-		return
-	}
-
-	// Convert DTOs to presentation models
-	rentedFacilities := make([]presentation.RentedFacility, len(dtos))
-	for i, dto := range dtos {
-		var boatInfo *presentation.BoatInfo
-		if dto.BoatID != nil && dto.BoatName != nil && dto.LengthMeters != nil && dto.WidthMeters != nil {
-			boatInfo = &presentation.BoatInfo{
-				Name:         *dto.BoatName,
-				LengthMeters: *dto.LengthMeters,
-				WidthMeters:  *dto.WidthMeters,
-			}
-		}
-
-		var payment *presentation.Payment
-		if dto.PaymentID != nil && dto.PaymentAmount != nil {
-			payment = &presentation.Payment{
-				Amount:   *dto.PaymentAmount,
-				Currency: "EUR", // Default currency
-			}
-			if dto.PaymentCurrency != nil {
-				payment.Currency = *dto.PaymentCurrency
-			}
-			if dto.PaymentPaidAt != nil {
-				payment.PaidAt = dto.PaymentPaidAt.Format("2006-01-02T15:04:05Z07:00")
-			}
-			if dto.PaymentMethod != nil {
-				payment.PaymentMethod = *dto.PaymentMethod
-			}
-			if dto.TransactionRef != nil {
-				payment.TransactionRef = *dto.TransactionRef
-			}
-		}
-
-		rentedFacilities[i] = presentation.RentedFacility{
-			ID:                      dto.RentedFacilityID,
-			FacilityID:              dto.FacilityID,
-			FacilityIdentifier:      dto.FacilityIdentifier,
-			FacilityName:            dto.FacilityType,
-			FacilityTypeDescription: dto.FacilityTypeDesc,
-			RentedAt:                dto.RentedAt.Format("2006-01-02T15:04:05Z07:00"),
-			ExpiresAt:               dto.ExpiresAt.Format("2006-01-02"),
-			Price:                   dto.Price,
-			Payment:                 payment,
-			BoatInfo:                boatInfo,
-		}
-	}
-
-	presentation.WriteJSON(w, http.StatusOK, rentedFacilities)
 }
 
 func FacilitiesCatalogHandler(w http.ResponseWriter, r *http.Request) {
@@ -305,7 +339,7 @@ func MembershipsHandler(w http.ResponseWriter, r *http.Request) {
 		presentation.WriteError(w, http.StatusBadRequest, "seasonEndsAt is required")
 		return
 	}
-	if req.Price <= 0 {
+	if req.Price < 0 {
 		presentation.WriteError(w, http.StatusBadRequest, "price must be greater than 0")
 		return
 	}
