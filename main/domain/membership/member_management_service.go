@@ -21,7 +21,7 @@ func (this MemberManagementService) GetListOfMembersBySeason(year int64) result.
 	return this.repository.GetMembersBySeason(year)
 }
 
-func (this MemberManagementService) GetMemberById(id domain.Id[Member], season string) result.Result[MemberDetails] {
+func (this MemberManagementService) GetMemberById(id domain.Id[Member], season int64) result.Result[MemberDetails] {
 	return this.repository.GetMemberById(id, season)
 }
 

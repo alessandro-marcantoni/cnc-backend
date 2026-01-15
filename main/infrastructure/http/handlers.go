@@ -118,13 +118,14 @@ func MemberByIDHandler(w http.ResponseWriter, r *http.Request) {
 
 		// Get season from query parameter
 		season := r.URL.Query().Get("season")
-		if season == "" {
+		seasonId, err := strconv.ParseInt(season, 10, 64)
+		if err != nil {
 			presentation.WriteError(w, http.StatusBadRequest, "missing season query parameter")
 			return
 		}
 
 		memberId := domain.Id[membership.Member]{Value: id}
-		result := memberService.GetMemberById(memberId, season)
+		result := memberService.GetMemberById(memberId, seasonId)
 
 		if !result.IsSuccess() {
 			presentation.WriteError(w, http.StatusNotFound, "member not found")

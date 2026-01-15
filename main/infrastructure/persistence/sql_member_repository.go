@@ -135,7 +135,7 @@ func (r *SQLMemberRepository) GetMembersBySeason(year int64) result.Result[[]m.M
 	return result.Ok(members)
 }
 
-func (r *SQLMemberRepository) GetMemberById(id domain.Id[m.Member], season string) result.Result[m.MemberDetails] {
+func (r *SQLMemberRepository) GetMemberById(id domain.Id[m.Member], season int64) result.Result[m.MemberDetails] {
 	var resultRow GetMemberByIdQueryResult
 	err := r.db.QueryRowContext(context.Background(), getMemberByIdQuery, id.Value, season).Scan(
 		&resultRow.MemberID,
@@ -276,13 +276,7 @@ func (r *SQLMemberRepository) CreateMember(user m.User, createMembership bool, s
 
 	// Fetch and return the created member details
 	if createMembership && seasonId != nil {
-		// We need to get the season code to query the member
-		var seasonCode string
-		err = r.db.QueryRowContext(ctx, "SELECT code FROM seasons WHERE id = $1", *seasonId).Scan(&seasonCode)
-		if err != nil {
-			return result.Err[m.MemberDetails](errors.RepositoryError{Description: "failed to get season code: " + err.Error()})
-		}
-		return r.GetMemberById(domain.Id[m.Member]{Value: memberId}, seasonCode)
+		return r.GetMemberById(domain.Id[m.Member]{Value: memberId}, *seasonId)
 	}
 
 	// If no membership was created, return member details with empty memberships
@@ -335,13 +329,6 @@ func (r *SQLMemberRepository) AddMembership(memberId domain.Id[m.Member], season
 		return result.Err[m.MemberDetails](errors.RepositoryError{Description: "failed to commit transaction: " + err.Error()})
 	}
 
-	// Fetch season code to query the member
-	var seasonCode string
-	err = r.db.QueryRowContext(ctx, "SELECT code FROM seasons WHERE id = $1", seasonId).Scan(&seasonCode)
-	if err != nil {
-		return result.Err[m.MemberDetails](errors.RepositoryError{Description: "failed to get season code: " + err.Error()})
-	}
-
 	// Fetch and return the updated member details
-	return r.GetMemberById(memberId, seasonCode)
+	return r.GetMemberById(memberId, seasonId)
 }

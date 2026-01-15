@@ -18,7 +18,7 @@ WITH membership_details AS (
     LEFT JOIN payments p ON mp.id = p.membership_period_id
     LEFT JOIN seasons s on s.id = mp.season_id
     WHERE m.member_id = $1
-    AND s.code = $2
+    AND s.id = $2
 )
 SELECT
     m.id AS member_id,
