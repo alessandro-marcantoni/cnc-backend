@@ -153,3 +153,22 @@ type PaymentResponse struct {
 	PaymentMethod  string  `json:"paymentMethod"`
 	TransactionRef *string `json:"transactionRef,omitempty"`
 }
+
+type WaitingListEntry struct {
+	ID             int64  `json:"id"`
+	MemberId       int64  `json:"memberId"`
+	FacilityTypeId int64  `json:"facilityTypeId"`
+	QueuedAt       string `json:"queuedAt"`
+	Notes          string `json:"notes,omitempty"`
+}
+
+type WaitingList struct {
+	FacilityTypeId int64              `json:"facilityTypeId"`
+	Entries        []WaitingListEntry `json:"entries"`
+}
+
+type AddToWaitingListRequest struct {
+	MemberId       int64  `json:"memberId"`
+	FacilityTypeId int64  `json:"facilityTypeId"`
+	Notes          string `json:"notes,omitempty"`
+}

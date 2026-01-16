@@ -14,6 +14,7 @@ func NewRouter() http.Handler {
 	mux.HandleFunc("/api/v1.0/facilities/catalog", FacilitiesCatalogHandler)
 	mux.HandleFunc("/api/v1.0/facilities", FacilitiesByTypeHandler)
 	mux.HandleFunc("/api/v1.0/facilities/rented", RentedFacilitiesHandler)
+	mux.HandleFunc("/api/v1.0/facilities/waiting-list", WaitingListHandler)
 	mux.HandleFunc("/api/v1.0/payments", PaymentsHandler)
 	mux.HandleFunc("/api/v1.0/payments/", PaymentByIDHandler)
 

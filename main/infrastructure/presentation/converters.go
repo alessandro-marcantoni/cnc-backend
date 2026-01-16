@@ -283,3 +283,30 @@ func ConvertCreateMemberRequestToDomain(req CreateMemberRequest) (CreateMemberDa
 func parseDate(dateStr string) (t time.Time, err error) {
 	return time.Parse("2006-01-02", dateStr)
 }
+
+func ConvertWaitingListEntryToPresentation(entry facilityrental.WaitingListEntry) WaitingListEntry {
+	return WaitingListEntry{
+		ID:             entry.Id.Value,
+		MemberId:       entry.MemberId.Value,
+		FacilityTypeId: entry.FacilityType.Value,
+		QueuedAt:       entry.QueuedAt.Format("2006-01-02T15:04:05Z07:00"),
+		Notes:          entry.Notes,
+	}
+}
+
+func ConvertWaitingListToPresentation(waitingList facilityrental.WaitingList) WaitingList {
+	entries := make([]WaitingListEntry, len(waitingList.Entries))
+	for i, entry := range waitingList.Entries {
+		entries[i] = ConvertWaitingListEntryToPresentation(entry)
+	}
+
+	facilityTypeId := int64(0)
+	if len(waitingList.Entries) > 0 {
+		facilityTypeId = waitingList.Entries[0].FacilityType.Value
+	}
+
+	return WaitingList{
+		FacilityTypeId: facilityTypeId,
+		Entries:        entries,
+	}
+}

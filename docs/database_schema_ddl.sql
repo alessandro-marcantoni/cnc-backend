@@ -191,6 +191,7 @@ CREATE TABLE IF NOT EXISTS members_waiting (
     member_id BIGINT NOT NULL REFERENCES members(id),
     facility_type_id BIGINT NOT NULL REFERENCES facilities_catalog(id),
     queued_at TIMESTAMP NOT NULL DEFAULT now(),
+    notes TEXT,
     UNIQUE(member_id, facility_type_id)
 );
 
