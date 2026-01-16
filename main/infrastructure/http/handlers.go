@@ -10,14 +10,16 @@ import (
 	"github.com/alessandro-marcantoni/cnc-backend/main/domain"
 	facilityrental "github.com/alessandro-marcantoni/cnc-backend/main/domain/facility_rental"
 	"github.com/alessandro-marcantoni/cnc-backend/main/domain/membership"
+	"github.com/alessandro-marcantoni/cnc-backend/main/domain/payment"
 	"github.com/alessandro-marcantoni/cnc-backend/main/infrastructure/persistence"
 	"github.com/alessandro-marcantoni/cnc-backend/main/infrastructure/presentation"
 	"github.com/alessandro-marcantoni/cnc-backend/main/shared/result"
 )
 
 var (
-	memberService *membership.MemberManagementService
-	rentalService *facilityrental.RentalManagementService
+	memberService  *membership.MemberManagementService
+	rentalService  *facilityrental.RentalManagementService
+	paymentService *payment.PaymentManagementService
 )
 
 func InitializeServices(db *sql.DB) {
@@ -25,6 +27,8 @@ func InitializeServices(db *sql.DB) {
 	memberService = membership.NewMemberManagementService(memberRepository)
 	facilityRepo := persistence.NewSQLFacilityRepository(db)
 	rentalService = facilityrental.NewRentalManagementService(facilityRepo)
+	paymentRepo := persistence.NewSQLPaymentRepository(db)
+	paymentService = payment.NewPaymentManagementService(paymentRepo)
 }
 
 func HealthHandler(w http.ResponseWriter, r *http.Request) {
@@ -337,4 +341,148 @@ func MembershipsHandler(w http.ResponseWriter, r *http.Request) {
 	// Convert to presentation and return
 	memberDetails := presentation.ConvertMemberDetailsToPresentation(result.Value())
 	presentation.WriteJSON(w, http.StatusCreated, memberDetails)
+}
+
+func PaymentsHandler(w http.ResponseWriter, r *http.Request) {
+	switch r.Method {
+	case http.MethodPost:
+		if paymentService == nil {
+			presentation.WriteError(w, http.StatusInternalServerError, "service not initialized")
+			return
+		}
+
+		var req presentation.CreatePaymentRequest
+		if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+			presentation.WriteError(w, http.StatusBadRequest, "invalid JSON: "+err.Error())
+			return
+		}
+
+		// Validate that exactly one of membershipPeriodId or rentedFacilityId is provided
+		if (req.MembershipPeriodId == nil && req.RentedFacilityId == nil) ||
+			(req.MembershipPeriodId != nil && req.RentedFacilityId != nil) {
+			presentation.WriteError(w, http.StatusBadRequest, "exactly one of membershipPeriodId or rentedFacilityId must be provided")
+			return
+		}
+
+		// Validate required fields
+		if req.Amount < 0 {
+			presentation.WriteError(w, http.StatusBadRequest, "amount must be greater than or equal to 0")
+			return
+		}
+		if req.Currency == "" {
+			presentation.WriteError(w, http.StatusBadRequest, "currency is required")
+			return
+		}
+		if req.PaymentMethod == "" {
+			presentation.WriteError(w, http.StatusBadRequest, "paymentMethod is required")
+			return
+		}
+
+		var result result.Result[int64]
+		if req.MembershipPeriodId != nil {
+			result = paymentService.CreatePaymentForMembershipPeriod(
+				*req.MembershipPeriodId,
+				req.Amount,
+				req.Currency,
+				req.PaymentMethod,
+				req.TransactionRef,
+			)
+		} else {
+			result = paymentService.CreatePaymentForRentedFacility(
+				*req.RentedFacilityId,
+				req.Amount,
+				req.Currency,
+				req.PaymentMethod,
+				req.TransactionRef,
+			)
+		}
+
+		if !result.IsSuccess() {
+			presentation.WriteError(w, http.StatusInternalServerError, result.Error().Error())
+			return
+		}
+
+		response := map[string]int64{"id": result.Value()}
+		presentation.WriteJSON(w, http.StatusCreated, response)
+
+	default:
+		w.WriteHeader(http.StatusMethodNotAllowed)
+	}
+}
+
+func PaymentByIDHandler(w http.ResponseWriter, r *http.Request) {
+	idStr := strings.TrimPrefix(r.URL.Path, "/api/v1.0/payments/")
+	if idStr == "" {
+		presentation.WriteError(w, http.StatusBadRequest, "missing payment id")
+		return
+	}
+
+	id, err := strconv.ParseInt(idStr, 10, 64)
+	if err != nil {
+		presentation.WriteError(w, http.StatusBadRequest, "invalid payment id format")
+		return
+	}
+
+	paymentId := domain.Id[payment.Payment]{Value: id}
+
+	switch r.Method {
+	case http.MethodPut:
+		if paymentService == nil {
+			presentation.WriteError(w, http.StatusInternalServerError, "service not initialized")
+			return
+		}
+
+		var req presentation.UpdatePaymentRequest
+		if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+			presentation.WriteError(w, http.StatusBadRequest, "invalid JSON: "+err.Error())
+			return
+		}
+
+		// Validate required fields
+		if req.Amount < 0 {
+			presentation.WriteError(w, http.StatusBadRequest, "amount must be greater than or equal to 0")
+			return
+		}
+		if req.Currency == "" {
+			presentation.WriteError(w, http.StatusBadRequest, "currency is required")
+			return
+		}
+		if req.PaymentMethod == "" {
+			presentation.WriteError(w, http.StatusBadRequest, "paymentMethod is required")
+			return
+		}
+
+		result := paymentService.UpdatePayment(
+			paymentId,
+			req.Amount,
+			req.Currency,
+			req.PaymentMethod,
+			req.TransactionRef,
+		)
+
+		if !result.IsSuccess() {
+			presentation.WriteError(w, http.StatusInternalServerError, result.Error().Error())
+			return
+		}
+
+		presentation.WriteJSON(w, http.StatusOK, map[string]bool{"success": true})
+
+	case http.MethodDelete:
+		if paymentService == nil {
+			presentation.WriteError(w, http.StatusInternalServerError, "service not initialized")
+			return
+		}
+
+		result := paymentService.DeletePayment(paymentId)
+
+		if !result.IsSuccess() {
+			presentation.WriteError(w, http.StatusNotFound, result.Error().Error())
+			return
+		}
+
+		presentation.WriteJSON(w, http.StatusOK, map[string]bool{"success": true})
+
+	default:
+		w.WriteHeader(http.StatusMethodNotAllowed)
+	}
 }

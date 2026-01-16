@@ -14,6 +14,7 @@ type Address struct {
 }
 
 type Payment struct {
+	ID             int64   `json:"id"`
 	Amount         float64 `json:"amount"`
 	Currency       string  `json:"currency"`
 	PaidAt         string  `json:"paidAt"`
@@ -125,4 +126,29 @@ type RentFacilityRequest struct {
 	ExpiresAt  string  `json:"expiresAt"`
 	SeasonId   int64   `json:"seasonId"`
 	Price      float64 `json:"price"`
+}
+
+type CreatePaymentRequest struct {
+	MembershipPeriodId *int64  `json:"membershipPeriodId"`
+	RentedFacilityId   *int64  `json:"rentedFacilityId"`
+	Amount             float64 `json:"amount"`
+	Currency           string  `json:"currency"`
+	PaymentMethod      string  `json:"paymentMethod"`
+	TransactionRef     *string `json:"transactionRef"`
+}
+
+type UpdatePaymentRequest struct {
+	Amount         float64 `json:"amount"`
+	Currency       string  `json:"currency"`
+	PaymentMethod  string  `json:"paymentMethod"`
+	TransactionRef *string `json:"transactionRef"`
+}
+
+type PaymentResponse struct {
+	ID             int64   `json:"id"`
+	Amount         float64 `json:"amount"`
+	Currency       string  `json:"currency"`
+	PaidAt         string  `json:"paidAt"`
+	PaymentMethod  string  `json:"paymentMethod"`
+	TransactionRef *string `json:"transactionRef,omitempty"`
 }

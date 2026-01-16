@@ -56,9 +56,12 @@ func convertMembershipToPresentation(m membership.Membership) Membership {
 	switch casted := m.Payment.(type) {
 	case payment.PaymentPaid:
 		p = &Payment{
-			Amount:   casted.AmountPaid,
-			PaidAt:   casted.PaymentDate.Format("2006-01-02T15:04:05Z07:00"),
-			Currency: casted.Currency,
+			ID:             casted.ID,
+			Amount:         casted.AmountPaid,
+			PaidAt:         casted.PaymentDate.Format("2006-01-02T15:04:05Z07:00"),
+			Currency:       casted.Currency,
+			PaymentMethod:  casted.PaymentMethod,
+			TransactionRef: casted.TransactionRef,
 		}
 	default:
 		p = nil
@@ -147,6 +150,21 @@ func ConvertRentedFacilityToPresentation(rf facilityrental.RentedFacility) Rente
 		Price:                   rf.GetPrice(),
 		ExpiresAt:               rf.GetValidity().ToDate.Format("2006-01-02"),
 		BoatInfo:                nil,
+		Payment:                 nil,
+	}
+
+	// Convert payment information
+	if rf.GetPayment().GetStatus() == payment.Paid {
+		if paymentPaid, ok := rf.GetPayment().(payment.PaymentPaid); ok {
+			rentedFacility.Payment = &Payment{
+				ID:             paymentPaid.ID,
+				Amount:         paymentPaid.AmountPaid,
+				Currency:       paymentPaid.Currency,
+				PaidAt:         paymentPaid.PaymentDate.Format(time.RFC3339),
+				PaymentMethod:  paymentPaid.PaymentMethod,
+				TransactionRef: paymentPaid.TransactionRef,
+			}
+		}
 	}
 
 	// Check if this is a boat facility

@@ -9,9 +9,12 @@ type Payment interface {
 }
 
 type PaymentPaid struct {
-	AmountPaid  float64
-	Currency    string
-	PaymentDate time.Time
+	ID             int64
+	AmountPaid     float64
+	Currency       string
+	PaymentDate    time.Time
+	PaymentMethod  string
+	TransactionRef string
 }
 
 func (p PaymentPaid) GetStatus() PaymentStatus {

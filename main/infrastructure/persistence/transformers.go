@@ -69,6 +69,7 @@ func MapToMemberFromMemberByIdQuery(queryResult GetMemberByIdQueryResult) result
 		ExcludedAt             *PgTimestamp `json:"excluded_at"`
 		Price                  float64      `json:"price"`
 		Payment                *struct {
+			ID             int64       `json:"id"`
 			Amount         float64     `json:"amount"`
 			Currency       string      `json:"currency"`
 			PaidAt         PgTimestamp `json:"paid_at"`
@@ -86,9 +87,12 @@ func MapToMemberFromMemberByIdQuery(queryResult GetMemberByIdQueryResult) result
 		var paymentInfo payment.Payment
 		if m.Payment != nil {
 			paymentInfo = payment.PaymentPaid{
-				AmountPaid:  m.Payment.Amount,
-				PaymentDate: m.Payment.PaidAt.Time,
-				Currency:    m.Payment.Currency,
+				ID:             m.Payment.ID,
+				AmountPaid:     m.Payment.Amount,
+				PaymentDate:    m.Payment.PaidAt.Time,
+				Currency:       m.Payment.Currency,
+				PaymentMethod:  m.Payment.PaymentMethod,
+				TransactionRef: m.Payment.TransactionRef,
 			}
 		} else {
 			paymentInfo = payment.PaymentUnpaid{}
@@ -195,9 +199,12 @@ func MapToMemberFromAllMembersQuery(queryResult GetAllMembersQueryResult) result
 	switch {
 	case queryResult.AmountPaid != nil && queryResult.PaidAt != nil:
 		paymentInfo = payment.PaymentPaid{
-			AmountPaid:  *queryResult.AmountPaid,
-			PaymentDate: *queryResult.PaidAt,
-			Currency:    *queryResult.Currency,
+			ID:             0, // ID not available in this query
+			AmountPaid:     *queryResult.AmountPaid,
+			PaymentDate:    *queryResult.PaidAt,
+			Currency:       *queryResult.Currency,
+			PaymentMethod:  "", // Not available in this query
+			TransactionRef: "", // Not available in this query
 		}
 	default:
 		paymentInfo = payment.PaymentUnpaid{}
@@ -255,9 +262,12 @@ func MapToMemberFromQueryBySeason(queryResult GetMembersBySeasonQueryResult) res
 	switch {
 	case queryResult.AmountPaid != nil && queryResult.PaidAt != nil:
 		paymentInfo = payment.PaymentPaid{
-			AmountPaid:  *queryResult.AmountPaid,
-			PaymentDate: *queryResult.PaidAt,
-			Currency:    *queryResult.Currency,
+			ID:             0, // ID not available in this query
+			AmountPaid:     *queryResult.AmountPaid,
+			PaymentDate:    *queryResult.PaidAt,
+			Currency:       *queryResult.Currency,
+			PaymentMethod:  "", // Not available in this query
+			TransactionRef: "", // Not available in this query
 		}
 	default:
 		paymentInfo = payment.PaymentUnpaid{}
@@ -303,6 +313,33 @@ func ConvertDTOToRentedFacility(dto GetRentedFacilitiesByMemberQueryResult) faci
 		FromDate: dto.RentedAt,
 	}
 
+	// Map payment information
+	var paymentInfo payment.Payment
+	if dto.PaymentID != nil && dto.PaymentAmount != nil && dto.PaymentPaidAt != nil {
+		method := ""
+		if dto.PaymentMethod != nil {
+			method = *dto.PaymentMethod
+		}
+		transactionRef := ""
+		if dto.TransactionRef != nil {
+			transactionRef = *dto.TransactionRef
+		}
+		currency := "EUR"
+		if dto.PaymentCurrency != nil {
+			currency = *dto.PaymentCurrency
+		}
+		paymentInfo = payment.PaymentPaid{
+			ID:             *dto.PaymentID,
+			AmountPaid:     *dto.PaymentAmount,
+			PaymentDate:    *dto.PaymentPaidAt,
+			Currency:       currency,
+			PaymentMethod:  method,
+			TransactionRef: transactionRef,
+		}
+	} else {
+		paymentInfo = payment.PaymentUnpaid{}
+	}
+
 	// Check if this is a boat facility (has boat info)
 	if dto.BoatID != nil && dto.BoatName != nil && dto.LengthMeters != nil && dto.WidthMeters != nil {
 		boatInfo := facilityrental.BoatInfo{
@@ -318,7 +355,7 @@ func ConvertDTOToRentedFacility(dto GetRentedFacilitiesByMemberQueryResult) faci
 			Facility: facility,
 			Validity: validity,
 			Price:    dto.Price,
-			Payment:  nil, // Payment info not included in this query
+			Payment:  paymentInfo,
 			BoatInfo: boatInfo,
 		}
 	}
@@ -330,6 +367,6 @@ func ConvertDTOToRentedFacility(dto GetRentedFacilitiesByMemberQueryResult) faci
 		Facility: facility,
 		Validity: validity,
 		Price:    dto.Price,
-		Payment:  nil, // Payment info not included in this query
+		Payment:  paymentInfo,
 	}
 }
