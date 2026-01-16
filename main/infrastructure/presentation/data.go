@@ -93,6 +93,9 @@ type FacilityWithStatus struct {
 	SuggestedPrice          float64 `json:"suggestedPrice"`
 	IsRented                bool    `json:"isRented"`
 	ExpiresAt               *string `json:"expiresAt,omitempty"`
+	RentedByMemberId        *int64  `json:"rentedByMemberId,omitempty"`
+	RentedByMemberFirstName *string `json:"rentedByMemberFirstName,omitempty"`
+	RentedByMemberLastName  *string `json:"rentedByMemberLastName,omitempty"`
 }
 
 type CreateMemberRequest struct {

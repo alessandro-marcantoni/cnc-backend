@@ -1,7 +1,7 @@
 SELECT
     rf.id                 AS rented_facility_id,
-    rf.rented_at,
-    rf.expires_at,
+    s.starts_at           AS rented_at,
+    s.ends_at             AS expires_at,
     rf.price,
 
     f.id                  AS facility_id,
@@ -28,12 +28,12 @@ JOIN facilities f
     ON f.id = rf.facility_id
 JOIN facilities_catalog fc
     ON fc.id = f.facility_type_id
+JOIN seasons s
+    ON s.id = rf.season_id
 LEFT JOIN boats b
     ON b.rented_facility_id = rf.id
 LEFT JOIN payments p
     ON p.rented_facility_id = rf.id
-LEFT JOIN seasons s
-    ON s.id = rf.season_id
 WHERE rf.member_id = $1
 AND s.id = $2
-ORDER BY rf.rented_at DESC;
+ORDER BY s.starts_at DESC;

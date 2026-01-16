@@ -6,7 +6,6 @@ import (
 	"net/http"
 	"strconv"
 	"strings"
-	"time"
 
 	"github.com/alessandro-marcantoni/cnc-backend/main/domain"
 	facilityrental "github.com/alessandro-marcantoni/cnc-backend/main/domain/facility_rental"
@@ -206,27 +205,8 @@ func RentedFacilitiesHandler(w http.ResponseWriter, r *http.Request) {
 			presentation.WriteError(w, http.StatusBadRequest, "seasonId is required")
 			return
 		}
-		if req.RentedAt == "" {
-			presentation.WriteError(w, http.StatusBadRequest, "seasonStartsAt is required")
-			return
-		}
-		if req.ExpiresAt == "" {
-			presentation.WriteError(w, http.StatusBadRequest, "seasonEndsAt is required")
-			return
-		}
 		if req.Price < 0 {
 			presentation.WriteError(w, http.StatusBadRequest, "price must be greater than 0")
-			return
-		}
-
-		rentedAt, err := time.Parse("2006-01-02", req.RentedAt)
-		if err != nil {
-			presentation.WriteError(w, http.StatusBadRequest, "rentedAt date format not valid")
-			return
-		}
-		expiresAt, err := time.Parse("2006-01-02", req.ExpiresAt)
-		if err != nil {
-			presentation.WriteError(w, http.StatusBadRequest, "expiresAt date format not valid")
 			return
 		}
 
@@ -239,10 +219,6 @@ func RentedFacilitiesHandler(w http.ResponseWriter, r *http.Request) {
 			facilityId,
 			memberId,
 			req.SeasonId,
-			facilityrental.RentalValidity{
-				FromDate: rentedAt,
-				ToDate:   expiresAt,
-			},
 			req.Price,
 			boatInfo,
 		)
@@ -301,7 +277,20 @@ func FacilitiesByTypeHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	facilities := rentalService.GetFacilitiesByType(domain.Id[facilityrental.FacilityType]{Value: facilityTypeID})
+	// Get season from query parameter
+	seasonStr := r.URL.Query().Get("season")
+	if seasonStr == "" {
+		presentation.WriteError(w, http.StatusBadRequest, "season is required")
+		return
+	}
+
+	seasonID, err := strconv.ParseInt(seasonStr, 10, 64)
+	if err != nil {
+		presentation.WriteError(w, http.StatusBadRequest, "invalid season")
+		return
+	}
+
+	facilities := rentalService.GetFacilitiesByType(domain.Id[facilityrental.FacilityType]{Value: facilityTypeID}, seasonID)
 	presentationFacilities := presentation.ConvertFacilitiesWithStatusToPresentation(facilities)
 	presentation.WriteJSON(w, http.StatusOK, presentationFacilities)
 }
@@ -332,14 +321,6 @@ func MembershipsHandler(w http.ResponseWriter, r *http.Request) {
 		presentation.WriteError(w, http.StatusBadRequest, "seasonId is required")
 		return
 	}
-	if req.SeasonStartsAt == "" {
-		presentation.WriteError(w, http.StatusBadRequest, "seasonStartsAt is required")
-		return
-	}
-	if req.SeasonEndsAt == "" {
-		presentation.WriteError(w, http.StatusBadRequest, "seasonEndsAt is required")
-		return
-	}
 	if req.Price < 0 {
 		presentation.WriteError(w, http.StatusBadRequest, "price must be greater than 0")
 		return
@@ -347,7 +328,7 @@ func MembershipsHandler(w http.ResponseWriter, r *http.Request) {
 
 	// Add membership period
 	memberId := domain.Id[membership.Member]{Value: req.MemberId}
-	result := memberService.AddMembership(memberId, req.SeasonId, req.SeasonStartsAt, req.SeasonEndsAt, req.Price)
+	result := memberService.AddMembership(memberId, req.SeasonId, req.Price)
 	if !result.IsSuccess() {
 		presentation.WriteError(w, http.StatusInternalServerError, result.Error().Error())
 		return

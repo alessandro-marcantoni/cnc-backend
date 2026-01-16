@@ -39,16 +39,12 @@ func convertPhoneNumbersToPresentation(numbers []membership.PhoneNumber) []Phone
 func convertAddressesToPresentation(a []membership.Address) []Address {
 	addresses := make([]Address, len(a))
 	for i, addr := range a {
-		zipCode := ""
-		if addr.ZipCode != nil {
-			zipCode = *addr.ZipCode
-		}
 		addresses[i] = Address{
 			Country:      addr.Country,
 			City:         addr.City,
 			Street:       addr.Street,
 			StreetNumber: fmt.Sprintf("%s", addr.Number),
-			ZipCode:      zipCode,
+			ZipCode:      addr.ZipCode,
 		}
 	}
 	return addresses
@@ -198,6 +194,9 @@ func ConvertFacilitiesWithStatusToPresentation(domainFacilities []facilityrental
 			SuggestedPrice:          f.SuggestedPrice,
 			IsRented:                f.IsRented,
 			ExpiresAt:               expiresAt,
+			RentedByMemberId:        f.RentedByMemberId,
+			RentedByMemberFirstName: f.RentedByMemberFirstName,
+			RentedByMemberLastName:  f.RentedByMemberLastName,
 		}
 	}
 	return presentationFacilities
@@ -236,14 +235,10 @@ func ConvertCreateMemberRequestToDomain(req CreateMemberRequest) (CreateMemberDa
 	// Convert addresses
 	addresses := make([]membership.Address, 0, len(req.Addresses))
 	for _, addr := range req.Addresses {
-		var zipCode *string
-		if addr.ZipCode != "" {
-			zipCode = &addr.ZipCode
-		}
 		addresses = append(addresses, membership.Address{
 			Country: addr.Country,
 			City:    addr.City,
-			ZipCode: zipCode,
+			ZipCode: addr.ZipCode,
 			Street:  addr.Street,
 			Number:  addr.StreetNumber,
 		})

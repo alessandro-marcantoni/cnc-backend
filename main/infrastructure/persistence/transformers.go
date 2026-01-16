@@ -34,6 +34,7 @@ func (pt *PgTimestamp) UnmarshalJSON(b []byte) error {
 		time.RFC3339Nano,
 		"2006-01-02 15:04:05.999999",
 		"2006-01-02 15:04:05",
+		"2006-01-02", // Date only format for seasons
 	}
 
 	var err error

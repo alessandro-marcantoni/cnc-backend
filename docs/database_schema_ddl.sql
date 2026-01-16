@@ -81,7 +81,7 @@ CREATE TABLE IF NOT EXISTS rented_facilities (
     season_id BIGINT NOT NULL REFERENCES seasons(id),
     price NUMERIC(10, 2) NOT NULL CHECK (price >= 0),
     currency CHAR(3) NOT NULL DEFAULT 'EUR',
-    CHECK (expires_at > rented_at)
+    UNIQUE (facility_id, season_id)
 );
 
 CREATE INDEX IF NOT EXISTS idx_rented_facility_member

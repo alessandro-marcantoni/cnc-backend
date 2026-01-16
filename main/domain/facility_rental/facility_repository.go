@@ -8,13 +8,12 @@ import (
 
 type FacilityRepository interface {
 	GetFacilitiesCatalog() []FacilityType
-	GetFacilitiesByType(facilityTypeId domain.Id[FacilityType]) []FacilityWithStatus
+	GetFacilitiesByType(facilityTypeId domain.Id[FacilityType], seasonId int64) []FacilityWithStatus
 	GetAvailableFacilities(serviceType FacilityName) []Facility
 	GetFacilitiesRentedByMember(memberId domain.Id[membership.User], season int64) []RentedFacility
 	RentFacility(
 		memberId domain.Id[membership.User],
 		facilityId domain.Id[Facility],
-		validity RentalValidity,
 		season int64,
 		price float64,
 		boatInfo *BoatInfo,

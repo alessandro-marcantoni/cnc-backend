@@ -15,4 +15,7 @@ type FacilityWithStatus struct {
 	SuggestedPrice          float64
 	IsRented                bool
 	ExpiresAt               *time.Time
+	RentedByMemberId        *int64
+	RentedByMemberFirstName *string
+	RentedByMemberLastName  *string
 }

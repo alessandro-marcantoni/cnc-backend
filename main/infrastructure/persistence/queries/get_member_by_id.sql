@@ -2,10 +2,9 @@ WITH membership_details AS (
     SELECT
         m.id AS membership_id,
         m.number AS membership_number,
-        mp.valid_from,
-        mp.expires_at,
+        s.starts_at AS valid_from,
+        s.ends_at AS expires_at,
         mp.exclusion_deliberated_at,
-        mp.excluded_at,
         mp.status_id,
         mp.price,
         p.amount AS payment_amount,
@@ -15,8 +14,8 @@ WITH membership_details AS (
         p.transaction_ref
     FROM memberships m
     JOIN membership_periods mp ON m.id = mp.membership_id
+    LEFT JOIN seasons s ON s.id = mp.season_id
     LEFT JOIN payments p ON mp.id = p.membership_period_id
-    LEFT JOIN seasons s on s.id = mp.season_id
     WHERE m.member_id = $1
     AND s.id = $2
 )
@@ -38,7 +37,8 @@ SELECT
             'country', a.country,
             'city', a.city,
             'street', a.street,
-            'street_number', a.street_number
+            'street_number', a.street_number,
+            'zip_code', a.zip_code
         )) FILTER (WHERE a.id IS NOT NULL),
         '[]'::json
     ) AS addresses,
@@ -49,7 +49,6 @@ SELECT
             'valid_from', md.valid_from,
             'expires_at', md.expires_at,
             'exclusion_deliberated_at', md.exclusion_deliberated_at,
-            'excluded_at', md.excluded_at,
             'status', ms.status,
             'price', md.price,
             'payment', CASE

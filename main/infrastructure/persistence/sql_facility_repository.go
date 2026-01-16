@@ -65,8 +65,8 @@ func (r *SQLFacilityRepository) GetFacilitiesCatalog() []facilityrental.Facility
 	return facilityTypes
 }
 
-func (r *SQLFacilityRepository) GetFacilitiesByType(facilityTypeId domain.Id[facilityrental.FacilityType]) []facilityrental.FacilityWithStatus {
-	rows, err := r.db.Query(getFacilitiesByTypeQuery, facilityTypeId.Value)
+func (r *SQLFacilityRepository) GetFacilitiesByType(facilityTypeId domain.Id[facilityrental.FacilityType], seasonId int64) []facilityrental.FacilityWithStatus {
+	rows, err := r.db.Query(getFacilitiesByTypeQuery, facilityTypeId.Value, seasonId)
 	if err != nil {
 		return []facilityrental.FacilityWithStatus{}
 	}
@@ -83,6 +83,9 @@ func (r *SQLFacilityRepository) GetFacilitiesByType(facilityTypeId domain.Id[fac
 		var suggestedPrice float64
 		var isRented bool
 		var expiresAt sql.NullTime
+		var rentedByMemberId sql.NullInt64
+		var rentedByMemberFirstName sql.NullString
+		var rentedByMemberLastName sql.NullString
 
 		err := rows.Scan(
 			&id,
@@ -93,6 +96,9 @@ func (r *SQLFacilityRepository) GetFacilitiesByType(facilityTypeId domain.Id[fac
 			&suggestedPrice,
 			&isRented,
 			&expiresAt,
+			&rentedByMemberId,
+			&rentedByMemberFirstName,
+			&rentedByMemberLastName,
 		)
 		if err != nil {
 			continue
@@ -101,6 +107,21 @@ func (r *SQLFacilityRepository) GetFacilitiesByType(facilityTypeId domain.Id[fac
 		var expiresAtPtr *time.Time
 		if expiresAt.Valid {
 			expiresAtPtr = &expiresAt.Time
+		}
+
+		var memberIdPtr *int64
+		if rentedByMemberId.Valid {
+			memberIdPtr = &rentedByMemberId.Int64
+		}
+
+		var firstNamePtr *string
+		if rentedByMemberFirstName.Valid {
+			firstNamePtr = &rentedByMemberFirstName.String
+		}
+
+		var lastNamePtr *string
+		if rentedByMemberLastName.Valid {
+			lastNamePtr = &rentedByMemberLastName.String
 		}
 
 		facility := facilityrental.FacilityWithStatus{
@@ -112,6 +133,9 @@ func (r *SQLFacilityRepository) GetFacilitiesByType(facilityTypeId domain.Id[fac
 			SuggestedPrice:          suggestedPrice,
 			IsRented:                isRented,
 			ExpiresAt:               expiresAtPtr,
+			RentedByMemberId:        memberIdPtr,
+			RentedByMemberFirstName: firstNamePtr,
+			RentedByMemberLastName:  lastNamePtr,
 		}
 		facilities = append(facilities, facility)
 	}
@@ -171,7 +195,6 @@ func (r *SQLFacilityRepository) GetFacilitiesRentedByMember(memberId domain.Id[m
 func (r *SQLFacilityRepository) RentFacility(
 	memberId domain.Id[membership.User],
 	facilityId domain.Id[facilityrental.Facility],
-	validity facilityrental.RentalValidity,
 	season int64,
 	price float64,
 	boatInfo *facilityrental.BoatInfo,
@@ -190,8 +213,6 @@ func (r *SQLFacilityRepository) RentFacility(
 	err = tx.QueryRowContext(ctx, insertRentedFacilityQuery,
 		facilityId.Value,
 		memberId.Value,
-		validity.FromDate.Format("2006-01-02"),
-		validity.ToDate.Format("2006-01-02"),
 		season,
 		price,
 	).Scan(&rentedFacilityId)

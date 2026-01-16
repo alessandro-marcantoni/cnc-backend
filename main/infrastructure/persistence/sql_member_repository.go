@@ -294,7 +294,7 @@ func (r *SQLMemberRepository) CreateMember(user m.User, createMembership bool, s
 	})
 }
 
-func (r *SQLMemberRepository) AddMembership(memberId domain.Id[m.Member], seasonId int64, seasonStartsAt string, seasonEndsAt string, price float64) result.Result[m.MemberDetails] {
+func (r *SQLMemberRepository) AddMembership(memberId domain.Id[m.Member], seasonId int64, price float64) result.Result[m.MemberDetails] {
 	ctx := context.Background()
 
 	// Begin transaction
@@ -314,8 +314,6 @@ func (r *SQLMemberRepository) AddMembership(memberId domain.Id[m.Member], season
 	// Insert membership period with status_id = 1 (ACTIVE)
 	_, err = tx.ExecContext(ctx, insertMembershipPeriodQuery,
 		membershipId,
-		seasonStartsAt,
-		seasonEndsAt,
 		1, // status_id for ACTIVE
 		seasonId,
 		price,
