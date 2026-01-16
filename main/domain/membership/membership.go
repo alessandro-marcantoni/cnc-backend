@@ -21,6 +21,7 @@ type MembershipInfo interface {
 	GetStatus() MembershipStatus
 	GetValidFromDate() time.Time
 	GetValidUntilDate() time.Time
+	GetPeriodId() *int64
 }
 
 type MembershipStatus string
@@ -34,22 +35,26 @@ const (
 )
 
 type Active struct {
+	PeriodId       int64
 	ValidFromDate  time.Time
 	ValidUntilDate time.Time
 }
 
 type Suspended struct {
+	PeriodId       int64
 	ValidFromDate  time.Time
 	ValidUntilDate time.Time
 }
 
 type Excluded struct {
+	PeriodId       int64
 	ValidFromDate  time.Time
 	ValidUntilDate time.Time
 	ExcludedAt     time.Time
 }
 
 type Expired struct {
+	PeriodId       int64
 	ValidFromDate  time.Time
 	ValidUntilDate time.Time
 }
@@ -69,6 +74,10 @@ func (a Active) GetValidUntilDate() time.Time {
 	return a.ValidUntilDate
 }
 
+func (a Active) GetPeriodId() *int64 {
+	return &a.PeriodId
+}
+
 func (s Suspended) GetStatus() MembershipStatus {
 	return MembershipStatusSuspended
 }
@@ -79,6 +88,10 @@ func (s Suspended) GetValidFromDate() time.Time {
 
 func (s Suspended) GetValidUntilDate() time.Time {
 	return s.ValidUntilDate
+}
+
+func (s Suspended) GetPeriodId() *int64 {
+	return &s.PeriodId
 }
 
 func (e Excluded) GetStatus() MembershipStatus {
@@ -93,6 +106,10 @@ func (e Excluded) GetValidUntilDate() time.Time {
 	return e.ValidUntilDate
 }
 
+func (e Excluded) GetPeriodId() *int64 {
+	return &e.PeriodId
+}
+
 func (e Expired) GetStatus() MembershipStatus {
 	return MembershipStatusExpired
 }
@@ -105,6 +122,10 @@ func (e Expired) GetValidUntilDate() time.Time {
 	return e.ValidUntilDate
 }
 
+func (e Expired) GetPeriodId() *int64 {
+	return &e.PeriodId
+}
+
 func (n None) GetStatus() MembershipStatus {
 	return MembershipStatusNone
 }
@@ -115,4 +136,8 @@ func (n None) GetValidFromDate() time.Time {
 
 func (n None) GetValidUntilDate() time.Time {
 	return time.Time{}
+}
+
+func (n None) GetPeriodId() *int64 {
+	return nil
 }

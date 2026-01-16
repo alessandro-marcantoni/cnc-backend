@@ -67,6 +67,7 @@ func MapToMemberFromMemberByIdQuery(queryResult GetMemberByIdQueryResult) result
 		Status                 string       `json:"status"`
 		ExclusionDeliberatedAt *PgTimestamp `json:"exclusion_deliberated_at"`
 		ExcludedAt             *PgTimestamp `json:"excluded_at"`
+		PeriodID               int64        `json:"membership_period_id"`
 		Price                  float64      `json:"price"`
 		Payment                *struct {
 			ID             int64       `json:"id"`
@@ -102,11 +103,13 @@ func MapToMemberFromMemberByIdQuery(queryResult GetMemberByIdQueryResult) result
 		switch {
 		case m.Status == "ACTIVE" && m.ExpiresAt.After(time.Now()):
 			membershipStatus = membership.Active{
+				PeriodId:       m.PeriodID,
 				ValidFromDate:  m.ValidFrom.Time,
 				ValidUntilDate: m.ExpiresAt.Time,
 			}
 		case m.Status == "ACTIVE" && m.ExpiresAt.Before(time.Now()):
 			membershipStatus = membership.Expired{
+				PeriodId:       m.PeriodID,
 				ValidFromDate:  m.ValidFrom.Time,
 				ValidUntilDate: m.ExpiresAt.Time,
 			}
@@ -116,18 +119,21 @@ func MapToMemberFromMemberByIdQuery(queryResult GetMemberByIdQueryResult) result
 				excludedAt = m.ExcludedAt.Time
 			}
 			membershipStatus = membership.Excluded{
+				PeriodId:       m.PeriodID,
 				ValidFromDate:  m.ValidFrom.Time,
 				ValidUntilDate: m.ExpiresAt.Time,
 				ExcludedAt:     excludedAt,
 			}
 		case m.Status == "SUSPENDED":
 			membershipStatus = membership.Suspended{
+				PeriodId:       m.PeriodID,
 				ValidFromDate:  m.ValidFrom.Time,
 				ValidUntilDate: m.ExpiresAt.Time,
 			}
 		default:
 			// Default to Active if unknown status
 			membershipStatus = membership.Active{
+				PeriodId:       m.PeriodID,
 				ValidFromDate:  m.ValidFrom.Time,
 				ValidUntilDate: m.ExpiresAt.Time,
 			}

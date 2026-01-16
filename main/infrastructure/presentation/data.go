@@ -28,6 +28,7 @@ type Membership struct {
 	Status    string   `json:"status"`
 	ValidFrom string   `json:"validFrom"`
 	ExpiresAt string   `json:"expiresAt"`
+	PeriodId  *int64   `json:"periodId"`
 	Payment   *Payment `json:"payment"`
 	Price     float64  `json:"price"`
 }

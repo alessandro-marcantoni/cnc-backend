@@ -73,6 +73,7 @@ func convertMembershipToPresentation(m membership.Membership) Membership {
 		Status:    string(m.Status.GetStatus()),
 		ValidFrom: m.Status.GetValidFromDate().Format("2006-01-02"),
 		ExpiresAt: m.Status.GetValidUntilDate().Format("2006-01-02"),
+		PeriodId:  m.Status.GetPeriodId(),
 		Price:     m.Price,
 		Payment:   p,
 	}

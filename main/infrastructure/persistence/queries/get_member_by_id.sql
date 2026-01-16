@@ -2,6 +2,7 @@ WITH membership_details AS (
     SELECT
         m.id AS membership_id,
         m.number AS membership_number,
+        mp.id AS membership_period_id,
         s.starts_at AS valid_from,
         s.ends_at AS expires_at,
         mp.exclusion_deliberated_at,
@@ -47,6 +48,7 @@ SELECT
         json_agg(DISTINCT jsonb_build_object(
             'membership_id', md.membership_id,
             'membership_number', md.membership_number,
+            'membership_period_id', md.membership_period_id,
             'valid_from', md.valid_from,
             'expires_at', md.expires_at,
             'exclusion_deliberated_at', md.exclusion_deliberated_at,
