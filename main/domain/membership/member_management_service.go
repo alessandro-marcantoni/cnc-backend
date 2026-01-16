@@ -17,8 +17,8 @@ func (this MemberManagementService) GetListOfAllMembers() result.Result[[]Member
 	return this.repository.GetAllMembers()
 }
 
-func (this MemberManagementService) GetListOfMembersBySeason(year int64) result.Result[[]Member] {
-	return this.repository.GetMembersBySeason(year)
+func (this MemberManagementService) GetListOfMembersBySeason(seasonId int64) result.Result[[]Member] {
+	return this.repository.GetMembersBySeason(seasonId)
 }
 
 func (this MemberManagementService) GetMemberById(id domain.Id[Member], season int64) result.Result[MemberDetails] {

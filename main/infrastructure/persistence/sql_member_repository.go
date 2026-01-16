@@ -91,9 +91,9 @@ func (r *SQLMemberRepository) GetAllMembers() result.Result[[]m.Member] {
 	return result.Ok(members)
 }
 
-func (r *SQLMemberRepository) GetMembersBySeason(year int64) result.Result[[]m.Member] {
+func (r *SQLMemberRepository) GetMembersBySeason(seasonId int64) result.Result[[]m.Member] {
 	var members []m.Member
-	rows, err := r.db.QueryContext(context.Background(), getMembersBySeasonQuery, year)
+	rows, err := r.db.QueryContext(context.Background(), getMembersBySeasonQuery, seasonId)
 	if err != nil {
 		return result.Err[[]m.Member](errors.RepositoryError{Description: err.Error()})
 	}

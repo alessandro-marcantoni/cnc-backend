@@ -18,5 +18,5 @@ LEFT JOIN membership_periods mp ON mem.id = mp.membership_id
 LEFT JOIN membership_statuses ms ON mp.status_id = ms.id
 LEFT JOIN payments p ON mp.id = p.membership_period_id
 LEFT JOIN seasons s ON mp.season_id = s.id
-WHERE s.code = $1
+WHERE s.id = $1
 ORDER BY m.last_name, m.first_name

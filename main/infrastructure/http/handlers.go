@@ -42,12 +42,12 @@ func MembersHandler(w http.ResponseWriter, r *http.Request) {
 		var result result.Result[[]membership.Member]
 		switch {
 		case r.URL.Query().Get("season") != "":
-			year, err := strconv.ParseInt(r.URL.Query().Get("season"), 10, 64)
+			seasonId, err := strconv.ParseInt(r.URL.Query().Get("season"), 10, 64)
 			if err != nil {
-				presentation.WriteError(w, http.StatusBadRequest, "invalid season format")
+				presentation.WriteError(w, http.StatusBadRequest, "invalid season ID format")
 				return
 			}
-			result = memberService.GetListOfMembersBySeason(year)
+			result = memberService.GetListOfMembersBySeason(seasonId)
 		default:
 			result = memberService.GetListOfAllMembers()
 		}

@@ -8,7 +8,7 @@ import (
 type MemberRepository interface {
 	GetAllMembers() result.Result[[]Member]
 	GetMemberById(id domain.Id[Member], season int64) result.Result[MemberDetails]
-	GetMembersBySeason(year int64) result.Result[[]Member]
+	GetMembersBySeason(seasonId int64) result.Result[[]Member]
 	GetMembersWhoDidNotPayForServices() []Member
 	GetMembersWhoDidNotPayForMembership() []Member
 	CreateMember(user User, createMembership bool, seasonId *int64, price *float64) result.Result[MemberDetails]
