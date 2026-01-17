@@ -9,7 +9,8 @@ import (
 
 type Member struct {
 	User
-	Membership Membership
+	Membership          Membership
+	HasUnpaidFacilities bool
 }
 
 type MemberDetails struct {

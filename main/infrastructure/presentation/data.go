@@ -64,13 +64,14 @@ type MemberDetails struct {
 }
 
 type Member struct {
-	ID               int64  `json:"id"`
-	FirstName        string `json:"firstName"`
-	LastName         string `json:"lastName"`
-	BirthDate        string `json:"birthDate"`
-	MembershipNumber int64  `json:"membershipNumber"`
-	MembershipStatus string `json:"membershipStatus"`
-	Paid             bool   `json:"paid"`
+	ID                  int64  `json:"id"`
+	FirstName           string `json:"firstName"`
+	LastName            string `json:"lastName"`
+	BirthDate           string `json:"birthDate"`
+	MembershipNumber    int64  `json:"membershipNumber"`
+	MembershipStatus    string `json:"membershipStatus"`
+	MembershipPaid      bool   `json:"membershipPaid"`
+	HasUnpaidFacilities bool   `json:"hasUnpaidFacilities"`
 }
 
 type MemberSummary struct {

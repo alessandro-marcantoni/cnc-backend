@@ -11,7 +11,18 @@ SELECT
     ms.status AS membership_status,
     p.amount AS amount_paid,
     p.paid_at AS paid_at,
-    p.currency AS currency
+    p.currency AS currency,
+    CASE
+        WHEN EXISTS (
+            SELECT 1
+            FROM rented_facilities rf
+            LEFT JOIN payments fp ON fp.rented_facility_id = rf.id
+            WHERE rf.member_id = m.id
+            AND rf.season_id = s.id
+            AND fp.id IS NULL
+        ) THEN true
+        ELSE false
+    END AS has_unpaid_facilities
 FROM members m
 LEFT JOIN memberships mem ON m.id = mem.member_id
 LEFT JOIN membership_periods mp ON mem.id = mp.membership_id

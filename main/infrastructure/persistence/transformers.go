@@ -296,7 +296,8 @@ func MapToMemberFromQueryBySeason(queryResult GetMembersBySeasonQueryResult) res
 			Addresses:    []membership.Address{},
 			PhoneNumbers: []membership.PhoneNumber{},
 		},
-		Membership: domainMembership,
+		Membership:          domainMembership,
+		HasUnpaidFacilities: queryResult.HasUnpaidFacilities,
 	})
 }
 

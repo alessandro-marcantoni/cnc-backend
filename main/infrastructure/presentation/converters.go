@@ -96,13 +96,14 @@ func ConvertMemberToPresentation(domainMember membership.Member) Member {
 	}
 
 	return Member{
-		ID:               domainMember.Id.Value,
-		FirstName:        domainMember.User.FirstName,
-		LastName:         domainMember.User.LastName,
-		BirthDate:        birthDate,
-		MembershipNumber: domainMember.Membership.Number,
-		MembershipStatus: string(domainMember.Membership.Status.GetStatus()),
-		Paid:             domainMember.Membership.Payment.GetStatus() == payment.Paid,
+		ID:                  domainMember.Id.Value,
+		FirstName:           domainMember.User.FirstName,
+		LastName:            domainMember.User.LastName,
+		BirthDate:           birthDate,
+		MembershipNumber:    domainMember.Membership.Number,
+		MembershipStatus:    string(domainMember.Membership.Status.GetStatus()),
+		MembershipPaid:      domainMember.Membership.Payment.GetStatus() == payment.Paid,
+		HasUnpaidFacilities: domainMember.HasUnpaidFacilities,
 	}
 }
 
