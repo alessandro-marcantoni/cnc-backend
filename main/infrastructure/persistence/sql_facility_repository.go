@@ -25,6 +25,9 @@ var getFacilitiesByTypeQuery string
 //go:embed queries/insert_rented_facility.sql
 var insertRentedFacilityQuery string
 
+//go:embed queries/get_facility_pricing_rules.sql
+var getFacilityPricingRulesQuery string
+
 type SQLFacilityRepository struct {
 	db *sql.DB
 }
@@ -233,4 +236,53 @@ func (r *SQLFacilityRepository) RentFacility(
 	}
 
 	return result.Err[facilityrental.RentedFacility](errors.RepositoryError{Description: "failed to retrieve inserted facility id"})
+}
+
+func (r *SQLFacilityRepository) GetPricingRules() []facilityrental.PricingRule {
+	rows, err := r.db.Query(getFacilityPricingRulesQuery)
+	if err != nil {
+		return []facilityrental.PricingRule{}
+	}
+	defer rows.Close()
+
+	var pricingRules []facilityrental.PricingRule
+
+	for rows.Next() {
+		var id int64
+		var facilityTypeId int64
+		var requiredFacilityTypeId int64
+		var specialPrice float64
+		var currency string
+		var description sql.NullString
+		var active bool
+		var createdAt time.Time
+		var updatedAt time.Time
+
+		err := rows.Scan(
+			&id,
+			&facilityTypeId,
+			&requiredFacilityTypeId,
+			&specialPrice,
+			&currency,
+			&description,
+			&active,
+			&createdAt,
+			&updatedAt,
+		)
+		if err != nil {
+			continue
+		}
+
+		pricingRule := facilityrental.PricingRule{
+			Id:                     domain.Id[facilityrental.PricingRule]{Value: id},
+			FacilityTypeId:         domain.Id[facilityrental.FacilityType]{Value: facilityTypeId},
+			RequiredFacilityTypeId: domain.Id[facilityrental.FacilityType]{Value: requiredFacilityTypeId},
+			SpecialPrice:           specialPrice,
+			Description:            description.String,
+			Active:                 active,
+		}
+		pricingRules = append(pricingRules, pricingRule)
+	}
+
+	return pricingRules
 }

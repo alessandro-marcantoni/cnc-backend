@@ -21,12 +21,13 @@ var (
 	rentalService      *facilityrental.RentalManagementService
 	paymentService     *payment.PaymentManagementService
 	waitingListService *facilityrental.WaitingListManagementService
+	facilityRepo       facilityrental.FacilityRepository
 )
 
 func InitializeServices(db *sql.DB) {
 	var memberRepository = persistence.NewSQLMemberRepository(db)
 	memberService = membership.NewMemberManagementService(memberRepository)
-	facilityRepo := persistence.NewSQLFacilityRepository(db)
+	facilityRepo = persistence.NewSQLFacilityRepository(db)
 	rentalService = facilityrental.NewRentalManagementService(facilityRepo)
 	paymentRepo := persistence.NewSQLPaymentRepository(db)
 	paymentService = payment.NewPaymentManagementService(paymentRepo)
@@ -600,4 +601,105 @@ func WaitingListHandler(w http.ResponseWriter, r *http.Request) {
 	default:
 		w.WriteHeader(http.StatusMethodNotAllowed)
 	}
+}
+
+func SuggestedPriceHandler(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodGet {
+		w.WriteHeader(http.StatusMethodNotAllowed)
+		return
+	}
+
+	if rentalService == nil {
+		presentation.WriteError(w, http.StatusInternalServerError, "service not initialized")
+		return
+	}
+
+	// Get facility_type_id from query parameter
+	facilityTypeIDStr := r.URL.Query().Get("facility_type_id")
+	if facilityTypeIDStr == "" {
+		presentation.WriteError(w, http.StatusBadRequest, "facility_type_id is required")
+		return
+	}
+
+	facilityTypeID, err := strconv.ParseInt(facilityTypeIDStr, 10, 64)
+	if err != nil {
+		presentation.WriteError(w, http.StatusBadRequest, "invalid facility_type_id")
+		return
+	}
+
+	// Get member_id from query parameter
+	memberIDStr := r.URL.Query().Get("member_id")
+	if memberIDStr == "" {
+		presentation.WriteError(w, http.StatusBadRequest, "member_id is required")
+		return
+	}
+
+	memberID, err := strconv.ParseInt(memberIDStr, 10, 64)
+	if err != nil {
+		presentation.WriteError(w, http.StatusBadRequest, "invalid member_id")
+		return
+	}
+
+	// Get season from query parameter (optional, defaults to 0)
+	seasonID := int64(0)
+	seasonStr := r.URL.Query().Get("season")
+	if seasonStr != "" {
+		parsedSeason, err := strconv.ParseInt(seasonStr, 10, 64)
+		if err != nil {
+			presentation.WriteError(w, http.StatusBadRequest, "invalid season")
+			return
+		}
+		seasonID = parsedSeason
+	}
+
+	// Fetch facility type from catalog to get base price
+	catalog := facilityRepo.GetFacilitiesCatalog()
+	var facilityType *facilityrental.FacilityType
+	for _, ft := range catalog {
+		if ft.Id.Value == facilityTypeID {
+			facilityType = &ft
+			break
+		}
+	}
+
+	if facilityType == nil {
+		presentation.WriteError(w, http.StatusNotFound, "facility type not found")
+		return
+	}
+
+	basePrice := facilityType.SuggestedPrice
+
+	facilityTypeId := domain.Id[facilityrental.FacilityType]{Value: facilityTypeID}
+	memberId := domain.Id[membership.User]{Value: memberID}
+
+	// Calculate suggested price with discounts
+	suggestedPrice := rentalService.GetSuggestedPriceForMember(
+		facilityTypeId,
+		basePrice,
+		memberId,
+		seasonID,
+	)
+
+	// Get applicable discount rules for informational purposes
+	applicableDiscounts := rentalService.GetApplicableDiscountsForMember(
+		facilityTypeId,
+		memberId,
+		seasonID,
+	)
+
+	hasSpecialPrice := suggestedPrice < basePrice
+	savingsAmount := 0.0
+	if hasSpecialPrice {
+		savingsAmount = basePrice - suggestedPrice
+	}
+
+	response := map[string]interface{}{
+		"suggestedPrice":  suggestedPrice,
+		"basePrice":       basePrice,
+		"savingsAmount":   savingsAmount,
+		"hasSpecialPrice": hasSpecialPrice,
+		"applicableRules": len(applicableDiscounts),
+	}
+
+	presentation.WriteJSON(w, http.StatusOK, response)
 }
