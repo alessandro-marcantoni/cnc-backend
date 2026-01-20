@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"os"
 	"strings"
 	"time"
 
@@ -13,8 +14,16 @@ import (
 	"github.com/lestrrat-go/jwx/v2/jwt"
 )
 
+func getEnv(key, defaultValue string) string {
+	if value := os.Getenv(key); value != "" {
+		return value
+	}
+	return defaultValue
+}
+
+var jwksURL = getEnv("JWKS_URL", "http://localhost:3000/api/auth/jwks")
+
 const (
-	jwksURL        = "http://localhost:3000/api/auth/jwks"
 	jwksCacheTTL   = 1 * time.Hour
 	contextUserKey = "user"
 )

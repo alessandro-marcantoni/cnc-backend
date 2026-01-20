@@ -203,3 +203,33 @@ ON members_waiting(facility_type_id);
 
 CREATE INDEX IF NOT EXISTS idx_waiting_queued
 ON members_waiting(queued_at);
+
+-- =========================
+-- FACILITY PRICING RULES
+-- =========================
+-- This table stores special pricing rules that apply when a member
+-- already has a specific facility type rented.
+-- Example: If member has a Box, then Canoe costs 80 EUR instead of base price
+CREATE TABLE IF NOT EXISTS facility_pricing_rules (
+    id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+    facility_type_id BIGINT NOT NULL REFERENCES facilities_catalog(id) ON DELETE CASCADE,
+    required_facility_type_id BIGINT NOT NULL REFERENCES facilities_catalog(id) ON DELETE CASCADE,
+    special_price NUMERIC(10,2) NOT NULL CHECK (special_price >= 0),
+    currency CHAR(3) NOT NULL DEFAULT 'EUR',
+    description TEXT,
+    active BOOLEAN NOT NULL DEFAULT TRUE,
+    created_at TIMESTAMP NOT NULL DEFAULT now(),
+    updated_at TIMESTAMP NOT NULL DEFAULT now(),
+    -- Ensure we don't have duplicate rules for the same combination
+    UNIQUE(facility_type_id, required_facility_type_id)
+);
+
+-- Indexes for performance
+CREATE INDEX IF NOT EXISTS idx_pricing_rules_facility_type
+ON facility_pricing_rules(facility_type_id);
+
+CREATE INDEX IF NOT EXISTS idx_pricing_rules_required_facility_type
+ON facility_pricing_rules(required_facility_type_id);
+
+CREATE INDEX IF NOT EXISTS idx_pricing_rules_active
+ON facility_pricing_rules(active);
