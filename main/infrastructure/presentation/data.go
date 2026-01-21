@@ -34,9 +34,16 @@ type Membership struct {
 }
 
 type BoatInfo struct {
-	Name         string  `json:"name"`
-	LengthMeters float64 `json:"lengthMeters"`
-	WidthMeters  float64 `json:"widthMeters"`
+	Name         string      `json:"name"`
+	LengthMeters float64     `json:"lengthMeters"`
+	WidthMeters  float64     `json:"widthMeters"`
+	Insurances   []Insurance `json:"insurances,omitempty"`
+}
+
+type Insurance struct {
+	Provider  string `json:"provider"`
+	Number    string `json:"number"`
+	ExpiresAt string `json:"expiresAt"`
 }
 
 type RentedFacility struct {
@@ -85,6 +92,7 @@ type FacilityType struct {
 	Name           string  `json:"name"`
 	Description    string  `json:"description"`
 	SuggestedPrice float64 `json:"suggestedPrice"`
+	HasBoat        bool    `json:"hasBoat"`
 }
 
 type FacilityWithStatus struct {
@@ -122,12 +130,13 @@ type AddMembershipRequest struct {
 }
 
 type RentFacilityRequest struct {
-	FacilityId int64   `json:"facilityId"`
-	MemberId   int64   `json:"memberId"`
-	RentedAt   string  `json:"rentedAt"`
-	ExpiresAt  string  `json:"expiresAt"`
-	SeasonId   int64   `json:"seasonId"`
-	Price      float64 `json:"price"`
+	FacilityId int64     `json:"facilityId"`
+	MemberId   int64     `json:"memberId"`
+	RentedAt   string    `json:"rentedAt"`
+	ExpiresAt  string    `json:"expiresAt"`
+	SeasonId   int64     `json:"seasonId"`
+	Price      float64   `json:"price"`
+	BoatInfo   *BoatInfo `json:"boatInfo,omitempty"`
 }
 
 type CreatePaymentRequest struct {

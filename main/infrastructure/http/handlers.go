@@ -220,7 +220,46 @@ func RentedFacilitiesHandler(w http.ResponseWriter, r *http.Request) {
 
 		memberId := domain.Id[membership.User]{Value: req.MemberId}
 		facilityId := domain.Id[facilityrental.Facility]{Value: req.FacilityId}
+
+		// Convert boat info from presentation to domain model if provided
 		var boatInfo *facilityrental.BoatInfo = nil
+		if req.BoatInfo != nil {
+			// Validate boat info
+			if req.BoatInfo.Name == "" {
+				presentation.WriteError(w, http.StatusBadRequest, "boat name is required when boatInfo is provided")
+				return
+			}
+			if req.BoatInfo.LengthMeters <= 0 {
+				presentation.WriteError(w, http.StatusBadRequest, "boat length must be greater than 0")
+				return
+			}
+			if req.BoatInfo.WidthMeters <= 0 {
+				presentation.WriteError(w, http.StatusBadRequest, "boat width must be greater than 0")
+				return
+			}
+			if len(req.BoatInfo.Insurances) == 0 {
+				presentation.WriteError(w, http.StatusBadRequest, "at least one insurance is required for boat")
+				return
+			}
+
+			// Use the first insurance (frontend sends array with one item)
+			insurance := req.BoatInfo.Insurances[0]
+			if insurance.Provider == "" || insurance.Number == "" || insurance.ExpiresAt == "" {
+				presentation.WriteError(w, http.StatusBadRequest, "insurance provider, number, and expiration date are required")
+				return
+			}
+
+			boatInfo = &facilityrental.BoatInfo{
+				Name:         req.BoatInfo.Name,
+				LengthMeters: req.BoatInfo.LengthMeters,
+				WidthMeters:  req.BoatInfo.WidthMeters,
+				InsuranceInfo: facilityrental.BoatInsurance{
+					ProviderName:   insurance.Provider,
+					PolicyNumber:   insurance.Number,
+					ExpirationDate: insurance.ExpiresAt,
+				},
+			}
+		}
 
 		// Rent facility
 		result := rentalService.RentService(

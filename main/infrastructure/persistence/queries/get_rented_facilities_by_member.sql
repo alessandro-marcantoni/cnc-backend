@@ -17,6 +17,11 @@ SELECT
     b.length_meters,
     b.width_meters,
 
+    i.id                  AS insurance_id,
+    i.provider            AS insurance_provider,
+    i.number              AS insurance_number,
+    i.expires_at          AS insurance_expires_at,
+
     p.id                  AS payment_id,
     p.amount              AS payment_amount,
     p.currency            AS payment_currency,
@@ -32,6 +37,8 @@ JOIN seasons s
     ON s.id = rf.season_id
 LEFT JOIN boats b
     ON b.rented_facility_id = rf.id
+LEFT JOIN insurances i
+    ON i.boat_id = b.id
 LEFT JOIN payments p
     ON p.rented_facility_id = rf.id
 WHERE rf.member_id = $1

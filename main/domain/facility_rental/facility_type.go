@@ -7,4 +7,5 @@ type FacilityType struct {
 	FacilityName   FacilityName
 	Description    string
 	SuggestedPrice float64
+	HasBoat        bool
 }

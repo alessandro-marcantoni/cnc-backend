@@ -349,11 +349,23 @@ func ConvertDTOToRentedFacility(dto GetRentedFacilitiesByMemberQueryResult) faci
 
 	// Check if this is a boat facility (has boat info)
 	if dto.BoatID != nil && dto.BoatName != nil && dto.LengthMeters != nil && dto.WidthMeters != nil {
+		// Determine insurance info
+		var insuranceInfo facilityrental.BoatInsuranceInfo
+		if dto.InsuranceID != nil && dto.InsuranceProvider != nil && dto.InsuranceNumber != nil && dto.InsuranceExpiresAt != nil {
+			insuranceInfo = facilityrental.BoatInsurance{
+				ProviderName:   *dto.InsuranceProvider,
+				PolicyNumber:   *dto.InsuranceNumber,
+				ExpirationDate: dto.InsuranceExpiresAt.Format("2006-01-02"),
+			}
+		} else {
+			insuranceInfo = facilityrental.NoBoatInsurance{}
+		}
+
 		boatInfo := facilityrental.BoatInfo{
 			Name:          *dto.BoatName,
 			LengthMeters:  *dto.LengthMeters,
 			WidthMeters:   *dto.WidthMeters,
-			InsuranceInfo: facilityrental.NoBoatInsurance{},
+			InsuranceInfo: insuranceInfo,
 		}
 
 		return facilityrental.RentedFacilityWithBoat{

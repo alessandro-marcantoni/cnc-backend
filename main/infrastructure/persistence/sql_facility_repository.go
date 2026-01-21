@@ -25,6 +25,12 @@ var getFacilitiesByTypeQuery string
 //go:embed queries/insert_rented_facility.sql
 var insertRentedFacilityQuery string
 
+//go:embed queries/insert_boat.sql
+var insertBoatQuery string
+
+//go:embed queries/insert_insurance.sql
+var insertInsuranceQuery string
+
 //go:embed queries/get_facility_pricing_rules.sql
 var getFacilityPricingRulesQuery string
 
@@ -50,8 +56,9 @@ func (r *SQLFacilityRepository) GetFacilitiesCatalog() []facilityrental.Facility
 		var name string
 		var description sql.NullString
 		var suggestedPrice float64
+		var hasBoat bool
 
-		err := rows.Scan(&id, &name, &description, &suggestedPrice)
+		err := rows.Scan(&id, &name, &description, &suggestedPrice, &hasBoat)
 		if err != nil {
 			continue
 		}
@@ -61,6 +68,7 @@ func (r *SQLFacilityRepository) GetFacilitiesCatalog() []facilityrental.Facility
 			FacilityName:   facilityrental.ToFacilityName(name),
 			Description:    description.String,
 			SuggestedPrice: suggestedPrice,
+			HasBoat:        hasBoat,
 		}
 		facilityTypes = append(facilityTypes, facilityType)
 	}
@@ -177,6 +185,10 @@ func (r *SQLFacilityRepository) GetFacilitiesRentedByMember(memberId domain.Id[m
 			&dto.BoatName,
 			&dto.LengthMeters,
 			&dto.WidthMeters,
+			&dto.InsuranceID,
+			&dto.InsuranceProvider,
+			&dto.InsuranceNumber,
+			&dto.InsuranceExpiresAt,
 			&dto.PaymentID,
 			&dto.PaymentAmount,
 			&dto.PaymentCurrency,
@@ -221,6 +233,35 @@ func (r *SQLFacilityRepository) RentFacility(
 	).Scan(&rentedFacilityId)
 	if err != nil {
 		return result.Err[facilityrental.RentedFacility](errors.RepositoryError{Description: "failed to insert facility rental: " + err.Error()})
+	}
+
+	// Insert boat info if provided
+	if boatInfo != nil {
+		var boatId int64
+		err = tx.QueryRowContext(ctx, insertBoatQuery,
+			rentedFacilityId,
+			boatInfo.Name,
+			boatInfo.LengthMeters,
+			boatInfo.WidthMeters,
+		).Scan(&boatId)
+		if err != nil {
+			return result.Err[facilityrental.RentedFacility](errors.RepositoryError{Description: "failed to insert boat info: " + err.Error()})
+		}
+
+		// Insert insurance info if boat has insurance
+		if boatInfo.HasInsurance() {
+			if insurance, ok := boatInfo.InsuranceInfo.(facilityrental.BoatInsurance); ok {
+				_, err = tx.ExecContext(ctx, insertInsuranceQuery,
+					boatId,
+					insurance.ProviderName,
+					insurance.PolicyNumber,
+					insurance.ExpirationDate,
+				)
+				if err != nil {
+					return result.Err[facilityrental.RentedFacility](errors.RepositoryError{Description: "failed to insert insurance info: " + err.Error()})
+				}
+			}
+		}
 	}
 
 	// Commit transaction

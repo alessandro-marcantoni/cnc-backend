@@ -65,6 +65,10 @@ type GetRentedFacilitiesByMemberQueryResult struct {
 	BoatName           *string    `json:"boat_name"`
 	LengthMeters       *float64   `json:"length_meters"`
 	WidthMeters        *float64   `json:"width_meters"`
+	InsuranceID        *int64     `json:"insurance_id"`
+	InsuranceProvider  *string    `json:"insurance_provider"`
+	InsuranceNumber    *string    `json:"insurance_number"`
+	InsuranceExpiresAt *time.Time `json:"insurance_expires_at"`
 	PaymentID          *int64     `json:"payment_id"`
 	PaymentAmount      *float64   `json:"payment_amount"`
 	PaymentCurrency    *string    `json:"payment_currency"`

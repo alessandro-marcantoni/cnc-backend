@@ -172,11 +172,26 @@ func ConvertRentedFacilityToPresentation(rf facilityrental.RentedFacility) Rente
 	// Check if this is a boat facility
 	if rf.GetType() == facilityrental.BoatFacility {
 		if rfWithBoat, ok := rf.(facilityrental.RentedFacilityWithBoat); ok {
-			rentedFacility.BoatInfo = &BoatInfo{
+			boatInfo := &BoatInfo{
 				Name:         rfWithBoat.BoatInfo.Name,
 				LengthMeters: rfWithBoat.BoatInfo.LengthMeters,
 				WidthMeters:  rfWithBoat.BoatInfo.WidthMeters,
 			}
+
+			// Add insurance information if available
+			if rfWithBoat.BoatInfo.HasInsurance() {
+				if insurance, ok := rfWithBoat.BoatInfo.InsuranceInfo.(facilityrental.BoatInsurance); ok {
+					boatInfo.Insurances = []Insurance{
+						{
+							Provider:  insurance.ProviderName,
+							Number:    insurance.PolicyNumber,
+							ExpiresAt: insurance.ExpirationDate,
+						},
+					}
+				}
+			}
+
+			rentedFacility.BoatInfo = boatInfo
 		}
 	}
 
@@ -191,6 +206,7 @@ func ConvertFacilityTypesToPresentation(domainFacilityTypes []facilityrental.Fac
 			Name:           string(ft.FacilityName),
 			Description:    ft.Description,
 			SuggestedPrice: ft.SuggestedPrice,
+			HasBoat:        ft.HasBoat,
 		}
 	}
 	return presentationFacilityTypes

@@ -46,7 +46,8 @@ CREATE TABLE IF NOT EXISTS facilities_catalog (
     id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
     name VARCHAR(100) NOT NULL UNIQUE,
     description TEXT,
-    suggested_price NUMERIC(10,2) NOT NULL CHECK (suggested_price >= 0)
+    suggested_price NUMERIC(10,2) NOT NULL CHECK (suggested_price >= 0),
+    has_boat BOOLEAN NOT NULL DEFAULT FALSE
 );
 
 CREATE TABLE IF NOT EXISTS facilities (
