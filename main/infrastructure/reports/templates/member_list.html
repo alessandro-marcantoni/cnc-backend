@@ -1,0 +1,165 @@
+<!doctype html>
+<html lang="it">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>Lista Soci</title>
+        <style>
+            * {
+                margin: 0;
+                padding: 0;
+                box-sizing: border-box;
+            }
+
+            body {
+                font-family: "Helvetica", "Arial", sans-serif;
+                color: #333;
+                padding: 20px;
+                background: #fff;
+            }
+
+            .header {
+                text-align: center;
+                margin-bottom: 25px;
+                border-bottom: 3px solid #2980b9;
+                padding-bottom: 20px;
+            }
+
+            .header h1 {
+                color: #2980b9;
+                font-size: 26px;
+                margin-bottom: 5px;
+                text-transform: uppercase;
+                letter-spacing: 2px;
+            }
+
+            .header .meta {
+                color: #7f8c8d;
+                font-size: 11px;
+                font-style: italic;
+                margin-top: 8px;
+            }
+
+            table {
+                width: 100%;
+                border-collapse: collapse;
+                font-size: 11px;
+                margin-bottom: 20px;
+            }
+
+            table thead {
+                background: #3498db;
+                color: white;
+            }
+
+            table th {
+                padding: 10px 8px;
+                text-align: left;
+                font-weight: bold;
+                text-transform: uppercase;
+                font-size: 10px;
+                letter-spacing: 0.5px;
+            }
+
+            table th.center {
+                text-align: center;
+            }
+
+            table td {
+                padding: 8px;
+                border-bottom: 1px solid #e9ecef;
+            }
+
+            table td.center {
+                text-align: center;
+            }
+
+            table tbody tr:nth-child(even) {
+                background: #f8f9fa;
+            }
+
+            table tbody tr:hover {
+                background: #e3f2fd;
+            }
+
+            .status-yes {
+                color: #27ae60;
+                font-weight: bold;
+            }
+
+            .status-no {
+                color: #e74c3c;
+                font-weight: bold;
+            }
+
+            .footer {
+                margin-top: 20px;
+                padding-top: 15px;
+                border-top: 2px solid #ecf0f1;
+                text-align: left;
+            }
+
+            .footer .total {
+                font-size: 14px;
+                font-weight: bold;
+                color: #2c3e50;
+            }
+
+            @page {
+                size: A4 portrait;
+                margin: 15mm;
+            }
+
+            @media print {
+                body {
+                    padding: 10px;
+                }
+            }
+        </style>
+    </head>
+    <body>
+        <div class="header">
+            <h1>Circolo Nautico Cattolica</h1>
+            <div class="meta">
+                Stagione {{.SeasonCode}} - Generato il {{.GeneratedDate}}
+            </div>
+        </div>
+
+        <table>
+            <thead>
+                <tr>
+                    <th class="center">N. Tessera</th>
+                    <th>Nome</th>
+                    <th class="center">Data di Nascita</th>
+                    <th>Email</th>
+                    <th class="center">Pag. Tessera</th>
+                    <th class="center">Pag. Servizi</th>
+                </tr>
+            </thead>
+            <tbody>
+                {{range .Members}}
+                <tr>
+                    <td class="center">{{.MembershipNumber}}</td>
+                    <td>{{.LastName}} {{.FirstName}}</td>
+                    <td class="center">{{.BirthDate}}</td>
+                    <td>{{.Email}}</td>
+                    <td
+                        class="center {{if .MembershipPaid}}status-yes{{else}}status-no{{end}}"
+                    >
+                        {{if .MembershipPaid}}Si{{else}}No{{end}}
+                    </td>
+                    <td
+                        class="center {{if .HasUnpaidFacilities}}status-no{{else}}status-yes{{end}}"
+                    >
+                        {{if .HasUnpaidFacilities}}No{{else}}Si{{end}}
+                    </td>
+                </tr>
+                {{end}}
+            </tbody>
+        </table>
+
+        <div class="footer">
+            <div class="total">Totale Soci: {{.TotalMembers}}</div>
+        </div>
+    </body>
+</html>
