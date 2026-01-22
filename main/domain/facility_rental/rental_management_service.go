@@ -8,11 +8,12 @@ import (
 )
 
 type RentalManagementService struct {
-	repository      FacilityRepository
-	priceCalculator *pricing.SuggestedPriceCalculator
+	repository            FacilityRepository
+	waitingListRepository WaitingListRepository
+	priceCalculator       *pricing.SuggestedPriceCalculator
 }
 
-func NewRentalManagementService(repository FacilityRepository) *RentalManagementService {
+func NewRentalManagementService(repository FacilityRepository, waitingListRepository WaitingListRepository) *RentalManagementService {
 	// Fetch pricing rules from database
 	pricingRules := repository.GetPricingRules()
 
@@ -20,8 +21,9 @@ func NewRentalManagementService(repository FacilityRepository) *RentalManagement
 	pricingConfigs := buildPricingConfigs(pricingRules)
 
 	return &RentalManagementService{
-		repository:      repository,
-		priceCalculator: pricing.NewSuggestedPriceCalculator(pricingConfigs),
+		repository:            repository,
+		waitingListRepository: waitingListRepository,
+		priceCalculator:       pricing.NewSuggestedPriceCalculator(pricingConfigs),
 	}
 }
 
@@ -64,7 +66,29 @@ func (this RentalManagementService) RentService(
 	price float64,
 	boat *BoatInfo,
 ) result.Result[RentedFacility] {
-	return this.repository.RentFacility(memberId, facilityId, season, price, boat)
+	// Rent the facility
+	rentResult := this.repository.RentFacility(memberId, facilityId, season, price, boat)
+	if !rentResult.IsSuccess() {
+		return rentResult
+	}
+
+	// Get the rented facility to access its type
+	rentedFacility := rentResult.Value()
+	facility := rentedFacility.GetFacility()
+	facilityTypeId := facility.FacilityType.Id
+
+	// Remove member from waiting list if they were waiting for this facility type
+	// Convert User ID to Member ID (they share the same underlying value)
+	memberIdForWaitlist := domain.Id[membership.Member]{Value: memberId.Value}
+
+	// Attempt to remove - if they weren't on the list, it's not an error
+	_ = this.waitingListRepository.RemoveEntryByMemberAndType(facilityTypeId, memberIdForWaitlist)
+	// We ignore the result because:
+	// - If successful, great! Member was waiting and is now removed
+	// - If they weren't on the waiting list, that's fine too
+	// - Either way, the facility rental succeeded
+
+	return rentResult
 }
 
 func (this RentalManagementService) GetFacilitiesCatalog() []FacilityType {

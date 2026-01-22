@@ -28,10 +28,10 @@ func InitializeServices(db *sql.DB) {
 	var memberRepository = persistence.NewSQLMemberRepository(db)
 	memberService = membership.NewMemberManagementService(memberRepository)
 	facilityRepo = persistence.NewSQLFacilityRepository(db)
-	rentalService = facilityrental.NewRentalManagementService(facilityRepo)
+	waitingListRepo := persistence.NewSQLWaitingListRepository(db)
+	rentalService = facilityrental.NewRentalManagementService(facilityRepo, waitingListRepo)
 	paymentRepo := persistence.NewSQLPaymentRepository(db)
 	paymentService = payment.NewPaymentManagementService(paymentRepo)
-	waitingListRepo := persistence.NewSQLWaitingListRepository(db)
 	waitingListService = facilityrental.NewWaitingListManagementService(waitingListRepo)
 }
 
@@ -769,7 +769,7 @@ func SuggestedPriceHandler(w http.ResponseWriter, r *http.Request) {
 		savingsAmount = basePrice - suggestedPrice
 	}
 
-	response := map[string]interface{}{
+	response := map[string]any{
 		"suggestedPrice":  suggestedPrice,
 		"basePrice":       basePrice,
 		"savingsAmount":   savingsAmount,
