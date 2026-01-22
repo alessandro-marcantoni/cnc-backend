@@ -15,7 +15,7 @@ SELECT
     m.last_name AS rented_by_member_last_name
 FROM facilities f
 INNER JOIN facilities_catalog fc ON f.facility_type_id = fc.id
-LEFT JOIN rented_facilities rf ON f.id = rf.facility_id AND rf.season_id = $2
+LEFT JOIN rented_facilities rf ON f.id = rf.facility_id AND rf.season_id = $2 AND rf.deleted_at IS NULL
 LEFT JOIN seasons s ON rf.season_id = s.id
 LEFT JOIN members m ON rf.member_id = m.id
 WHERE f.facility_type_id = $1

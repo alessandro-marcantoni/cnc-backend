@@ -128,3 +128,7 @@ func (this RentalManagementService) GetApplicableDiscountsForMember(
 		rentedFacilityTypeIds,
 	)
 }
+
+func (this RentalManagementService) FreeFacility(rentedFacilityId domain.Id[RentedFacility]) result.Result[bool] {
+	return this.repository.FreeFacility(rentedFacilityId)
+}

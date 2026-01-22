@@ -284,6 +284,43 @@ func RentedFacilitiesHandler(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+func RentedFacilityByIDHandler(w http.ResponseWriter, r *http.Request) {
+	idStr := strings.TrimPrefix(r.URL.Path, "/api/v1.0/facilities/rented/")
+	if idStr == "" {
+		presentation.WriteError(w, http.StatusBadRequest, "missing rented facility id")
+		return
+	}
+
+	id, err := strconv.ParseInt(idStr, 10, 64)
+	if err != nil {
+		presentation.WriteError(w, http.StatusBadRequest, "invalid rented facility id format")
+		return
+	}
+
+	rentedFacilityId := domain.Id[facilityrental.RentedFacility]{Value: id}
+
+	switch r.Method {
+	case http.MethodDelete:
+		if rentalService == nil {
+			presentation.WriteError(w, http.StatusInternalServerError, "service not initialized")
+			return
+		}
+
+		// Free the facility
+		result := rentalService.FreeFacility(rentedFacilityId)
+		if !result.IsSuccess() {
+			presentation.WriteError(w, http.StatusNotFound, result.Error().Error())
+			return
+		}
+
+		presentation.WriteJSON(w, http.StatusOK, map[string]bool{"success": true})
+
+	default:
+		w.WriteHeader(http.StatusMethodNotAllowed)
+		return
+	}
+}
+
 func FacilitiesCatalogHandler(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodGet {
 		w.WriteHeader(http.StatusMethodNotAllowed)

@@ -19,6 +19,7 @@ type FacilityRepository interface {
 		price float64,
 		boatInfo *BoatInfo,
 	) result.Result[RentedFacility]
+	FreeFacility(rentedFacilityId domain.Id[RentedFacility]) result.Result[bool]
 }
 
 type PricingRule struct {

@@ -34,6 +34,9 @@ var insertInsuranceQuery string
 //go:embed queries/get_facility_pricing_rules.sql
 var getFacilityPricingRulesQuery string
 
+//go:embed queries/delete_rented_facility.sql
+var deleteRentedFacilityQuery string
+
 type SQLFacilityRepository struct {
 	db *sql.DB
 }
@@ -326,4 +329,26 @@ func (r *SQLFacilityRepository) GetPricingRules() []facilityrental.PricingRule {
 	}
 
 	return pricingRules
+}
+
+func (r *SQLFacilityRepository) FreeFacility(rentedFacilityId domain.Id[facilityrental.RentedFacility]) result.Result[bool] {
+	ctx := context.Background()
+
+	// Execute soft delete query (sets deleted_at timestamp)
+	execResult, err := r.db.ExecContext(ctx, deleteRentedFacilityQuery, rentedFacilityId.Value)
+	if err != nil {
+		return result.Err[bool](errors.RepositoryError{Description: "failed to soft delete rented facility: " + err.Error()})
+	}
+
+	// Check if any rows were affected
+	rowsAffected, err := execResult.RowsAffected()
+	if err != nil {
+		return result.Err[bool](errors.RepositoryError{Description: "failed to get rows affected: " + err.Error()})
+	}
+
+	if rowsAffected == 0 {
+		return result.Err[bool](errors.RepositoryError{Description: "rented facility not found or already deleted"})
+	}
+
+	return result.Ok(true)
 }

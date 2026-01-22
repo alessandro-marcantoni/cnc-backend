@@ -82,14 +82,23 @@ CREATE TABLE IF NOT EXISTS rented_facilities (
     season_id BIGINT NOT NULL REFERENCES seasons(id),
     price NUMERIC(10, 2) NOT NULL CHECK (price >= 0),
     currency CHAR(3) NOT NULL DEFAULT 'EUR',
-    UNIQUE (facility_id, season_id)
+    deleted_at TIMESTAMP DEFAULT NULL
 );
+
+-- Partial unique index: only applies to non-deleted records
+-- This allows re-renting the same facility in the same season after soft delete
+CREATE UNIQUE INDEX IF NOT EXISTS idx_rented_facilities_active_unique
+ON rented_facilities(facility_id, season_id)
+WHERE deleted_at IS NULL;
 
 CREATE INDEX IF NOT EXISTS idx_rented_facility_member
 ON rented_facilities(member_id);
 
 CREATE INDEX IF NOT EXISTS idx_rented_facility_facility
 ON rented_facilities(facility_id);
+
+CREATE INDEX IF NOT EXISTS idx_rented_facilities_deleted_at
+ON rented_facilities(deleted_at) WHERE deleted_at IS NULL;
 
 -- =========================
 -- MEMBERSHIPS

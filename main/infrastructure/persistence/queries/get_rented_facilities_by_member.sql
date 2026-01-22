@@ -43,4 +43,5 @@ LEFT JOIN payments p
     ON p.rented_facility_id = rf.id
 WHERE rf.member_id = $1
 AND s.id = $2
+AND rf.deleted_at IS NULL
 ORDER BY s.starts_at DESC;
