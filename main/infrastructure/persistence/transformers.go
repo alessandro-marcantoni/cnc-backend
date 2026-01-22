@@ -292,7 +292,7 @@ func MapToMemberFromQueryBySeason(queryResult GetMembersBySeasonQueryResult) res
 			FirstName:    queryResult.FirstName,
 			LastName:     queryResult.LastName,
 			BirthDate:    queryResult.DateOfBirth,
-			Email:        membership.EmailAddress{Value: "sample.email@example.com"},
+			Email:        membership.EmailAddress{Value: queryResult.Email},
 			Addresses:    []membership.Address{},
 			PhoneNumbers: []membership.PhoneNumber{},
 		},

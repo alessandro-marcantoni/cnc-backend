@@ -8,11 +8,14 @@ import (
 	"strings"
 
 	"github.com/alessandro-marcantoni/cnc-backend/main/domain"
+	"github.com/alessandro-marcantoni/cnc-backend/main/domain/club"
 	facilityrental "github.com/alessandro-marcantoni/cnc-backend/main/domain/facility_rental"
 	"github.com/alessandro-marcantoni/cnc-backend/main/domain/membership"
 	"github.com/alessandro-marcantoni/cnc-backend/main/domain/payment"
+	"github.com/alessandro-marcantoni/cnc-backend/main/domain/reports"
 	"github.com/alessandro-marcantoni/cnc-backend/main/infrastructure/persistence"
 	"github.com/alessandro-marcantoni/cnc-backend/main/infrastructure/presentation"
+	infrareports "github.com/alessandro-marcantoni/cnc-backend/main/infrastructure/reports"
 	"github.com/alessandro-marcantoni/cnc-backend/main/shared/result"
 )
 
@@ -21,18 +24,23 @@ var (
 	rentalService      *facilityrental.RentalManagementService
 	paymentService     *payment.PaymentManagementService
 	waitingListService *facilityrental.WaitingListManagementService
+	reportService      *reports.ReportService
 	facilityRepo       facilityrental.FacilityRepository
+	seasonRepo         club.SeasonRepository
 )
 
-func InitializeServices(db *sql.DB) {
-	var memberRepository = persistence.NewSQLMemberRepository(db)
+func InitializeServices(database *sql.DB) {
+	var memberRepository = persistence.NewSQLMemberRepository(database)
 	memberService = membership.NewMemberManagementService(memberRepository)
-	facilityRepo = persistence.NewSQLFacilityRepository(db)
-	waitingListRepo := persistence.NewSQLWaitingListRepository(db)
+	facilityRepo = persistence.NewSQLFacilityRepository(database)
+	waitingListRepo := persistence.NewSQLWaitingListRepository(database)
 	rentalService = facilityrental.NewRentalManagementService(facilityRepo, waitingListRepo)
-	paymentRepo := persistence.NewSQLPaymentRepository(db)
+	paymentRepo := persistence.NewSQLPaymentRepository(database)
 	paymentService = payment.NewPaymentManagementService(paymentRepo)
 	waitingListService = facilityrental.NewWaitingListManagementService(waitingListRepo)
+	seasonRepo = persistence.NewSQLSeasonRepository(database)
+	pdfGenerator := infrareports.NewGoPDFGenerator()
+	reportService = reports.NewReportService(pdfGenerator)
 }
 
 func HealthHandler(w http.ResponseWriter, r *http.Request) {
@@ -778,4 +786,238 @@ func SuggestedPriceHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	presentation.WriteJSON(w, http.StatusOK, response)
+}
+
+// MemberListPDFHandler generates a PDF report with all members
+func MemberListPDFHandler(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodGet {
+		w.WriteHeader(http.StatusMethodNotAllowed)
+		return
+	}
+
+	if reportService == nil {
+		presentation.WriteError(w, http.StatusInternalServerError, "report service not initialized")
+		return
+	}
+
+	if memberService == nil {
+		presentation.WriteError(w, http.StatusInternalServerError, "member service not initialized")
+		return
+	}
+
+	// Get season from query parameter
+	seasonStr := r.URL.Query().Get("season")
+	if seasonStr == "" {
+		presentation.WriteError(w, http.StatusBadRequest, "missing season query parameter")
+		return
+	}
+
+	seasonId, err := strconv.ParseInt(seasonStr, 10, 64)
+	if err != nil {
+		presentation.WriteError(w, http.StatusBadRequest, "invalid season format")
+		return
+	}
+
+	// Get all members for the season
+	membersResult := memberService.GetListOfMembersBySeason(seasonId)
+	if !membersResult.IsSuccess() {
+		presentation.WriteError(w, http.StatusInternalServerError, "failed to get members: "+membersResult.Error().Error())
+		return
+	}
+
+	members := membersResult.Value()
+
+	// Convert to report format
+	memberSummaries := make([]reports.MemberSummary, len(members))
+	for i, member := range members {
+		memberSummaries[i] = reports.MemberSummary{
+			ID:                  member.User.Id.Value,
+			FirstName:           member.User.FirstName,
+			LastName:            member.User.LastName,
+			Email:               member.User.Email.Value,
+			BirthDate:           member.User.BirthDate.Format("02/01/2006"),
+			MembershipNumber:    member.Membership.Number,
+			MembershipStatus:    string(member.Membership.Status.GetStatus()),
+			MembershipPaid:      member.Membership.Payment.GetStatus() == payment.Paid,
+			HasUnpaidFacilities: member.HasUnpaidFacilities,
+		}
+	}
+
+	// Get season code
+	seasonResult := seasonRepo.GetSeasonById(seasonId)
+	if !seasonResult.IsSuccess() {
+		presentation.WriteError(w, http.StatusInternalServerError, "failed to get season: "+seasonResult.Error().Error())
+		return
+	}
+	seasonCode := seasonResult.Value().GetCode()
+
+	// Generate PDF
+	pdfBuffer, err := reportService.GenerateMemberListReport(memberSummaries, seasonCode)
+	if err != nil {
+		presentation.WriteError(w, http.StatusInternalServerError, "failed to generate PDF: "+err.Error())
+		return
+	}
+
+	// Set headers for PDF download
+	w.Header().Set("Content-Type", "application/pdf")
+	w.Header().Set("Content-Disposition", "attachment; filename=lista_soci.pdf")
+	w.Header().Set("Content-Length", strconv.Itoa(pdfBuffer.Len()))
+
+	// Write PDF to response
+	w.WriteHeader(http.StatusOK)
+	w.Write(pdfBuffer.Bytes())
+}
+
+// MemberDetailPDFHandler generates a PDF report with member details and facilities
+func MemberDetailPDFHandler(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodGet {
+		w.WriteHeader(http.StatusMethodNotAllowed)
+		return
+	}
+
+	if reportService == nil {
+		presentation.WriteError(w, http.StatusInternalServerError, "report service not initialized")
+		return
+	}
+
+	if memberService == nil || rentalService == nil {
+		presentation.WriteError(w, http.StatusInternalServerError, "service not initialized")
+		return
+	}
+
+	// Get member ID from path
+	idStr := strings.TrimPrefix(r.URL.Path, "/api/v1.0/reports/members/")
+	idStr = strings.TrimSuffix(idStr, "/pdf")
+	if idStr == "" {
+		presentation.WriteError(w, http.StatusBadRequest, "missing member id")
+		return
+	}
+
+	memberId64, err := strconv.ParseInt(idStr, 10, 64)
+	if err != nil {
+		presentation.WriteError(w, http.StatusBadRequest, "invalid member id format")
+		return
+	}
+
+	memberId := domain.Id[membership.Member]{Value: memberId64}
+
+	// Get season from query parameter
+	seasonStr := r.URL.Query().Get("season")
+	if seasonStr == "" {
+		presentation.WriteError(w, http.StatusBadRequest, "missing season query parameter")
+		return
+	}
+
+	seasonId, err := strconv.ParseInt(seasonStr, 10, 64)
+	if err != nil {
+		presentation.WriteError(w, http.StatusBadRequest, "invalid season format")
+		return
+	}
+
+	// Get member details
+	memberResult := memberService.GetMemberById(memberId, seasonId)
+	if !memberResult.IsSuccess() {
+		presentation.WriteError(w, http.StatusNotFound, "member not found")
+		return
+	}
+
+	memberDetails := memberResult.Value()
+
+	// Convert member to report format
+	memberDetail := reports.MemberDetail{
+		ID:        memberDetails.User.Id.Value,
+		FirstName: memberDetails.User.FirstName,
+		LastName:  memberDetails.User.LastName,
+		Email:     memberDetails.User.Email.Value,
+		BirthDate: memberDetails.User.BirthDate.Format("02/01/2006"),
+	}
+
+	// Add phone numbers
+	for _, phone := range memberDetails.User.PhoneNumbers {
+		prefix := ""
+		if phone.Prefix != nil {
+			prefix = *phone.Prefix
+		}
+		memberDetail.PhoneNumbers = append(memberDetail.PhoneNumbers, reports.PhoneNumber{
+			Prefix: prefix,
+			Number: phone.Number,
+		})
+	}
+
+	// Add addresses
+	for _, addr := range memberDetails.User.Addresses {
+		memberDetail.Addresses = append(memberDetail.Addresses, reports.Address{
+			Country:      addr.Country,
+			City:         addr.City,
+			Street:       addr.Street,
+			StreetNumber: addr.Number,
+			ZipCode:      addr.ZipCode,
+		})
+	}
+
+	// Add memberships
+	for _, ms := range memberDetails.Memberships {
+		memberDetail.Memberships = append(memberDetail.Memberships, reports.Membership{
+			ID:        ms.Id.Value,
+			Number:    ms.Number,
+			Status:    string(ms.Status.GetStatus()),
+			ValidFrom: ms.Status.GetValidFromDate().Format("02/01/2006"),
+			ExpiresAt: ms.Status.GetValidUntilDate().Format("02/01/2006"),
+			Price:     ms.Price,
+			Paid:      ms.Payment.GetStatus() == payment.Paid,
+		})
+	}
+
+	// Get rented facilities
+	userIdForFacilities := domain.Id[membership.User]{Value: memberId64}
+	rentedFacilities := rentalService.GetFacilitiesRentedByMember(userIdForFacilities, seasonId)
+
+	// Convert to report format
+	facilityRentals := make([]reports.FacilityRental, len(rentedFacilities))
+	for i, rf := range rentedFacilities {
+		facility := rf.GetFacility()
+		boatName := ""
+		if rf.GetType() == facilityrental.BoatFacility {
+			if boatFacility, ok := rf.(facilityrental.RentedFacilityWithBoat); ok {
+				boatName = boatFacility.BoatInfo.Name
+			}
+		}
+
+		facilityRentals[i] = reports.FacilityRental{
+			ID:                      rf.GetId().Value,
+			FacilityIdentifier:      facility.Identifier,
+			FacilityName:            string(facility.FacilityType.FacilityName),
+			FacilityTypeDescription: facility.FacilityType.Description,
+			RentedAt:                rf.GetValidity().FromDate.Format("02/01/2006"),
+			ExpiresAt:               rf.GetValidity().ToDate.Format("02/01/2006"),
+			Price:                   rf.GetPrice(),
+			Paid:                    rf.GetPayment().GetStatus() == payment.Paid,
+			BoatName:                boatName,
+		}
+	}
+
+	// Get season code
+	seasonResult := seasonRepo.GetSeasonById(seasonId)
+	if !seasonResult.IsSuccess() {
+		presentation.WriteError(w, http.StatusInternalServerError, "failed to get season: "+seasonResult.Error().Error())
+		return
+	}
+	seasonCode := seasonResult.Value().GetCode()
+
+	// Generate PDF
+	pdfBuffer, err := reportService.GenerateMemberDetailReport(memberDetail, facilityRentals, seasonCode)
+	if err != nil {
+		presentation.WriteError(w, http.StatusInternalServerError, "failed to generate PDF: "+err.Error())
+		return
+	}
+
+	// Set headers for PDF download
+	filename := "dettaglio_socio_" + memberDetails.User.LastName + "_" + memberDetails.User.FirstName + ".pdf"
+	w.Header().Set("Content-Type", "application/pdf")
+	w.Header().Set("Content-Disposition", "attachment; filename="+filename)
+	w.Header().Set("Content-Length", strconv.Itoa(pdfBuffer.Len()))
+
+	// Write PDF to response
+	w.WriteHeader(http.StatusOK)
+	w.Write(pdfBuffer.Bytes())
 }

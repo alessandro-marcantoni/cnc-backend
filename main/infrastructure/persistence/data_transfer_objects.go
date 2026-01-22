@@ -37,6 +37,7 @@ type GetMembersBySeasonQueryResult struct {
 	MemberID               int64      `json:"member_id"`
 	FirstName              string     `json:"first_name"`
 	LastName               string     `json:"last_name"`
+	Email                  string     `json:"email"`
 	DateOfBirth            time.Time  `json:"date_of_birth"`
 	MembershipNumber       *int64     `json:"membership_number"`
 	MembershipStatus       string     `json:"membership_status"`

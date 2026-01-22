@@ -23,6 +23,8 @@ func NewRouter() http.Handler {
 	mux.HandleFunc("/api/v1.0/facilities/suggested-price", SuggestedPriceHandler)
 	mux.HandleFunc("/api/v1.0/payments", PaymentsHandler)
 	mux.HandleFunc("/api/v1.0/payments/", PaymentByIDHandler)
+	mux.HandleFunc("/api/v1.0/reports/members/list/pdf", MemberListPDFHandler)
+	mux.HandleFunc("/api/v1.0/reports/members/", MemberDetailPDFHandler)
 
 	router := cors(mux)
 	router = conditionalAuthMiddleware(router)

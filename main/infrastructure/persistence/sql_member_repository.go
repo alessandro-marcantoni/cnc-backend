@@ -105,6 +105,7 @@ func (r *SQLMemberRepository) GetMembersBySeason(seasonId int64) result.Result[[
 			&resultRow.MemberID,
 			&resultRow.FirstName,
 			&resultRow.LastName,
+			&resultRow.Email,
 			&resultRow.DateOfBirth,
 			&resultRow.MembershipNumber,
 			&resultRow.SeasonStartsAt,

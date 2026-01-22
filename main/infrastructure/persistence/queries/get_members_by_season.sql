@@ -2,6 +2,7 @@ SELECT
     m.id AS member_id,
     m.first_name,
     m.last_name,
+    m.email,
     m.date_of_birth,
     mem.number AS membership_number,
     s.starts_at AS season_starts_at,
