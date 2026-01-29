@@ -5,7 +5,11 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"path/filepath"
 
+	"github.com/golang-migrate/migrate/v4"
+	_ "github.com/golang-migrate/migrate/v4/database/postgres"
+	_ "github.com/golang-migrate/migrate/v4/source/file"
 	_ "github.com/lib/pq"
 )
 
@@ -43,9 +47,15 @@ func (c *DatabaseConfig) ConnectionString() string {
 	)
 }
 
+func (c *DatabaseConfig) DatabaseURL() string {
+	return fmt.Sprintf("postgres://%s:%s@%s:%s/%s?sslmode=%s", c.User, c.Password, c.Host, c.Port, c.DBName, c.SSLMode)
+}
+
 func InitializeDatabase() (*sql.DB, error) {
 	config := NewDatabaseConfig()
 	connStr := config.ConnectionString()
+
+	RunMigrations(config.DatabaseURL())
 
 	db, err := sql.Open("postgres", connStr)
 	if err != nil {
@@ -63,4 +73,23 @@ func InitializeDatabase() (*sql.DB, error) {
 
 	log.Println("✅ Database connection established")
 	return db, nil
+}
+
+func RunMigrations(databaseURL string) {
+	cwd, err := os.Getwd()
+	if err != nil {
+		log.Fatal(err)
+	}
+	migrationsPath := filepath.Join(cwd, "db", "migrations")
+	m, err := migrate.New(
+		"file://"+migrationsPath,
+		databaseURL,
+	)
+	if err != nil {
+		log.Fatal("migration init failed:", err)
+	}
+
+	if err := m.Up(); err != nil && err != migrate.ErrNoChange {
+		log.Fatal("migration failed:", err)
+	}
 }

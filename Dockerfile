@@ -37,6 +37,7 @@ RUN apt-get update && \
 ENV CHROME_BIN=/usr/bin/chromium
 
 COPY --from=builder /app/app /app/app
+COPY --from=builder /app/db /app/db
 
 EXPOSE 8080
 
