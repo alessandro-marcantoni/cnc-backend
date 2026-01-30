@@ -27,7 +27,7 @@ func NewRouter() http.Handler {
 	mux.HandleFunc("/api/v1.0/reports/members/", MemberDetailPDFHandler)
 
 	router := cors(mux)
-	router = conditionalAuthMiddleware(router)
+	// router = conditionalAuthMiddleware(router)
 	router = loggingMiddleware(router)
 	return withMiddleware(router)
 }
