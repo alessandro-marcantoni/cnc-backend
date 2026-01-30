@@ -52,7 +52,8 @@ CREATE TABLE IF NOT EXISTS facilities_catalog (
 CREATE TABLE IF NOT EXISTS facilities (
     id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
     facility_type_id BIGINT NOT NULL REFERENCES facilities_catalog(id),
-    identifier VARCHAR(255) NOT NULL UNIQUE
+    identifier VARCHAR(255) NOT NULL,
+    UNIQUE (facility_type_id, identifier)
 );
 
 CREATE INDEX IF NOT EXISTS idx_facilities_type
@@ -242,22 +243,3 @@ ON facility_pricing_rules(required_facility_type_id);
 
 CREATE INDEX IF NOT EXISTS idx_pricing_rules_active
 ON facility_pricing_rules(active);
-
--- =========================
--- BETTER AUTH TABLES
--- =========================
-create table "user" ("id" text not null primary key, "name" text not null, "email" text not null unique, "emailVerified" boolean not null, "image" text, "createdAt" timestamptz default CURRENT_TIMESTAMP not null, "updatedAt" timestamptz default CURRENT_TIMESTAMP not null);
-
-create table "session" ("id" text not null primary key, "expiresAt" timestamptz not null, "token" text not null unique, "createdAt" timestamptz default CURRENT_TIMESTAMP not null, "updatedAt" timestamptz not null, "ipAddress" text, "userAgent" text, "userId" text not null references "user" ("id") on delete cascade);
-
-create table "account" ("id" text not null primary key, "accountId" text not null, "providerId" text not null, "userId" text not null references "user" ("id") on delete cascade, "accessToken" text, "refreshToken" text, "idToken" text, "accessTokenExpiresAt" timestamptz, "refreshTokenExpiresAt" timestamptz, "scope" text, "password" text, "createdAt" timestamptz default CURRENT_TIMESTAMP not null, "updatedAt" timestamptz not null);
-
-create table "verification" ("id" text not null primary key, "identifier" text not null, "value" text not null, "expiresAt" timestamptz not null, "createdAt" timestamptz default CURRENT_TIMESTAMP not null, "updatedAt" timestamptz default CURRENT_TIMESTAMP not null);
-
-create index "session_userId_idx" on "session" ("userId");
-
-create index "account_userId_idx" on "account" ("userId");
-
-create index "verification_identifier_idx" on "verification" ("identifier");
-
-create table "jwks" ("id" text not null primary key, "publicKey" text not null, "privateKey" text not null, "createdAt" timestamptz not null, "expiresAt" timestamptz);
