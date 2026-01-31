@@ -1,0 +1,1 @@
+ALTER TABLE facilities_catalog ADD COLUMN has_boat BOOLEAN NOT NULL DEFAULT FALSE;
