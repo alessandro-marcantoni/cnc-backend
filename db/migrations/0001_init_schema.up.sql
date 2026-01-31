@@ -29,11 +29,11 @@ ON phone_numbers(member_id);
 CREATE TABLE IF NOT EXISTS addresses (
     id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
     member_id BIGINT NOT NULL REFERENCES members(id) ON DELETE CASCADE,
-    country VARCHAR(100) NOT NULL,
-    city VARCHAR(100) NOT NULL,
-    street VARCHAR(255) NOT NULL,
-    street_number VARCHAR(50) NOT NULL,
-    zip_code VARCHAR(20) NOT NULL
+    country VARCHAR(100) NOT NULL DEFAULT '',
+    city VARCHAR(100) NOT NULL DEFAULT '',
+    street VARCHAR(255) NOT NULL DEFAULT '',
+    street_number VARCHAR(50) NOT NULL DEFAULT '',
+    zip_code VARCHAR(20) NOT NULL DEFAULT ''
 );
 
 CREATE INDEX IF NOT EXISTS idx_addresses_member

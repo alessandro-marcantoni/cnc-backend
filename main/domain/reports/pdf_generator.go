@@ -40,7 +40,6 @@ type MemberDetail struct {
 
 // PhoneNumber represents a phone number
 type PhoneNumber struct {
-	Prefix string
 	Number string
 }
 

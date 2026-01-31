@@ -29,7 +29,6 @@ SELECT
     m.email,
     COALESCE(
         json_agg(DISTINCT jsonb_build_object(
-            'prefix', pn.description,
             'number', pn.number
         )) FILTER (WHERE pn.id IS NOT NULL),
         '[]'::json

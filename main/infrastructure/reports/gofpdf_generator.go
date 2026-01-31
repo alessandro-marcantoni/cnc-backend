@@ -156,7 +156,7 @@ func (g *GoPDFGenerator) GenerateMemberDetailPDF(member reports.MemberDetail, fa
 			if i > 0 {
 				phoneStr += ", "
 			}
-			phoneStr += phone.Prefix + " " + phone.Number
+			phoneStr += phone.Number
 		}
 		pdf.CellFormat(0, 7, phoneStr, "1", 1, "L", false, 0, "")
 	}

@@ -934,12 +934,7 @@ func MemberDetailPDFHandler(w http.ResponseWriter, r *http.Request) {
 
 	// Add phone numbers
 	for _, phone := range memberDetails.User.PhoneNumbers {
-		prefix := ""
-		if phone.Prefix != nil {
-			prefix = *phone.Prefix
-		}
 		memberDetail.PhoneNumbers = append(memberDetail.PhoneNumbers, reports.PhoneNumber{
-			Prefix: prefix,
 			Number: phone.Number,
 		})
 	}

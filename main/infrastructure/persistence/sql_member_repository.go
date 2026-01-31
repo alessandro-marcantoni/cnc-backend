@@ -194,12 +194,7 @@ func (r *SQLMemberRepository) CreateMember(user m.User, createMembership bool, s
 
 	// 2. Insert phone numbers
 	for _, phone := range user.PhoneNumbers {
-		prefix := ""
-		if phone.Prefix != nil {
-			prefix = *phone.Prefix
-		}
-		fullNumber := prefix + phone.Number
-		_, err = tx.ExecContext(ctx, insertPhoneNumberQuery, memberId, fullNumber, nil)
+		_, err = tx.ExecContext(ctx, insertPhoneNumberQuery, memberId, phone.Number, nil)
 		if err != nil {
 			return result.Err[m.MemberDetails](errors.RepositoryError{Description: "failed to insert phone number: " + err.Error()})
 		}
@@ -260,8 +255,6 @@ func (r *SQLMemberRepository) CreateMember(user m.User, createMembership bool, s
 		// Insert membership period with status_id = 1 (ACTIVE)
 		_, err = tx.ExecContext(ctx, insertMembershipPeriodQuery,
 			membershipId,
-			seasonStartsAt,
-			seasonEndsAt,
 			1, // status_id for ACTIVE
 			*seasonId,
 			membershipPrice,

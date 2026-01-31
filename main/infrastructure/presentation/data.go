@@ -1,7 +1,6 @@
 package presentation
 
 type PhoneNumber struct {
-	Prefix string `json:"prefix"`
 	Number string `json:"number"`
 }
 

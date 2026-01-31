@@ -24,12 +24,7 @@ func WriteError(w http.ResponseWriter, status int, msg string) {
 func convertPhoneNumbersToPresentation(numbers []membership.PhoneNumber) []PhoneNumber {
 	phoneNumbers := make([]PhoneNumber, len(numbers))
 	for i, pn := range numbers {
-		prefix := ""
-		if pn.Prefix != nil {
-			prefix = *pn.Prefix
-		}
 		phoneNumbers[i] = PhoneNumber{
-			Prefix: prefix,
 			Number: pn.Number,
 		}
 	}
@@ -261,7 +256,7 @@ func ConvertCreateMemberRequestToDomain(req CreateMemberRequest) (CreateMemberDa
 	// Convert phone numbers
 	phoneNumbers := make([]membership.PhoneNumber, 0, len(req.PhoneNumbers))
 	for _, pn := range req.PhoneNumbers {
-		phoneResult := membership.NewPhoneNumber(pn.Prefix, pn.Number)
+		phoneResult := membership.NewPhoneNumber(pn.Number)
 		if !phoneResult.IsSuccess() {
 			return CreateMemberData{}, fmt.Errorf("invalid phone number: %s", phoneResult.Error().Error())
 		}

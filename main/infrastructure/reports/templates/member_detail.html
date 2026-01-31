@@ -239,8 +239,7 @@
                     <div class="info-label">Telefono</div>
                     <div class="info-value">
                         {{range $index, $phone := .Member.PhoneNumbers}} {{if
-                        $index}}, {{end}}{{$phone.Prefix}} {{$phone.Number}}
-                        {{end}}
+                        $index}}, {{end}}{{$phone.Number}} {{end}}
                     </div>
                 </div>
                 {{end}} {{if .Member.Addresses}}
