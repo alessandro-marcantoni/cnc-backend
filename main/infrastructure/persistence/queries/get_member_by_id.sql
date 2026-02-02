@@ -13,7 +13,7 @@ WITH membership_details AS (
         p.currency AS payment_currency,
         p.paid_at AS payment_date,
         p.payment_method,
-        p.transaction_ref
+        p.notes
     FROM memberships m
     JOIN membership_periods mp ON m.id = mp.membership_id
     LEFT JOIN seasons s ON s.id = mp.season_id
@@ -61,7 +61,7 @@ SELECT
                         'currency', md.payment_currency,
                         'paid_at', md.payment_date,
                         'payment_method', md.payment_method,
-                        'transaction_ref', md.transaction_ref
+                        'payment_notes', md.notes
                     )
                 ELSE NULL
             END

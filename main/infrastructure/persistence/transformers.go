@@ -70,12 +70,12 @@ func MapToMemberFromMemberByIdQuery(queryResult GetMemberByIdQueryResult) result
 		PeriodID               int64        `json:"membership_period_id"`
 		Price                  float64      `json:"price"`
 		Payment                *struct {
-			ID             int64       `json:"id"`
-			Amount         float64     `json:"amount"`
-			Currency       string      `json:"currency"`
-			PaidAt         PgTimestamp `json:"paid_at"`
-			PaymentMethod  string      `json:"payment_method"`
-			TransactionRef string      `json:"transaction_ref"`
+			ID            int64       `json:"id"`
+			Amount        float64     `json:"amount"`
+			Currency      string      `json:"currency"`
+			PaidAt        PgTimestamp `json:"paid_at"`
+			PaymentMethod string      `json:"payment_method"`
+			Notes         string      `json:"payment_notes"`
 		} `json:"payment"`
 	}
 	if err := json.Unmarshal(queryResult.Memberships, &memberships); err != nil {
@@ -93,7 +93,7 @@ func MapToMemberFromMemberByIdQuery(queryResult GetMemberByIdQueryResult) result
 				PaymentDate:    m.Payment.PaidAt.Time,
 				Currency:       m.Payment.Currency,
 				PaymentMethod:  m.Payment.PaymentMethod,
-				TransactionRef: m.Payment.TransactionRef,
+				TransactionRef: m.Payment.Notes,
 			}
 		} else {
 			paymentInfo = payment.PaymentUnpaid{}
@@ -328,8 +328,8 @@ func ConvertDTOToRentedFacility(dto GetRentedFacilitiesByMemberQueryResult) faci
 			method = *dto.PaymentMethod
 		}
 		transactionRef := ""
-		if dto.TransactionRef != nil {
-			transactionRef = *dto.TransactionRef
+		if dto.PaymentNotes != nil {
+			transactionRef = *dto.PaymentNotes
 		}
 		currency := "EUR"
 		if dto.PaymentCurrency != nil {

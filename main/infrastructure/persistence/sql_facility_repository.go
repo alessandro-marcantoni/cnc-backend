@@ -197,7 +197,7 @@ func (r *SQLFacilityRepository) GetFacilitiesRentedByMember(memberId domain.Id[m
 			&dto.PaymentCurrency,
 			&dto.PaymentPaidAt,
 			&dto.PaymentMethod,
-			&dto.TransactionRef,
+			&dto.PaymentNotes,
 		)
 		if err != nil {
 			continue

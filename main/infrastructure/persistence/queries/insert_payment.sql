@@ -5,6 +5,6 @@ INSERT INTO payments (
     currency,
     paid_at,
     payment_method,
-    transaction_ref
+    notes
 ) VALUES ($1, $2, $3, $4, $5, $6, $7)
 RETURNING id;

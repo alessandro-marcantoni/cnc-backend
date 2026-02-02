@@ -75,5 +75,5 @@ type GetRentedFacilitiesByMemberQueryResult struct {
 	PaymentCurrency    *string    `json:"payment_currency"`
 	PaymentPaidAt      *time.Time `json:"payment_paid_at"`
 	PaymentMethod      *string    `json:"payment_method"`
-	TransactionRef     *string    `json:"transaction_ref"`
+	PaymentNotes       *string    `json:"payment_notes"`
 }

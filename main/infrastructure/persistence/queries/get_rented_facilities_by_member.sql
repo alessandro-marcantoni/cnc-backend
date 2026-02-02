@@ -27,7 +27,7 @@ SELECT
     p.currency            AS payment_currency,
     p.paid_at             AS payment_paid_at,
     p.payment_method,
-    p.transaction_ref
+    p.notes               AS payment_notes
 FROM rented_facilities rf
 JOIN facilities f
     ON f.id = rf.facility_id
