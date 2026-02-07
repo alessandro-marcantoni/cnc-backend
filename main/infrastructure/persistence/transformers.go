@@ -148,6 +148,11 @@ func MapToMemberFromMemberByIdQuery(queryResult GetMemberByIdQueryResult) result
 		})
 	}
 
+	taxCode := ""
+	if queryResult.TaxCode.Valid {
+		taxCode = queryResult.TaxCode.String
+	}
+
 	return result.Ok(membership.MemberDetails{
 		User: membership.User{
 			Id:           domain.Id[membership.User]{Value: queryResult.MemberID},
@@ -155,6 +160,7 @@ func MapToMemberFromMemberByIdQuery(queryResult GetMemberByIdQueryResult) result
 			LastName:     queryResult.LastName,
 			BirthDate:    queryResult.DateOfBirth,
 			Email:        membership.EmailAddress{Value: queryResult.Email},
+			TaxCode:      taxCode,
 			Addresses:    addresses,
 			PhoneNumbers: phoneNumbers,
 		},
@@ -236,6 +242,7 @@ func MapToMemberFromAllMembersQuery(queryResult GetAllMembersQueryResult) result
 			LastName:     queryResult.LastName,
 			BirthDate:    queryResult.DateOfBirth,
 			Email:        membership.EmailAddress{Value: "sample.email@example.com"},
+			TaxCode:      "",
 			Addresses:    []membership.Address{},
 			PhoneNumbers: []membership.PhoneNumber{},
 		},
@@ -286,6 +293,11 @@ func MapToMemberFromQueryBySeason(queryResult GetMembersBySeasonQueryResult) res
 		Payment: paymentInfo,
 	}
 
+	taxCode := ""
+	if queryResult.TaxCode.Valid {
+		taxCode = queryResult.TaxCode.String
+	}
+
 	return result.Ok(membership.Member{
 		User: membership.User{
 			Id:           domain.Id[membership.User]{Value: queryResult.MemberID},
@@ -293,6 +305,7 @@ func MapToMemberFromQueryBySeason(queryResult GetMembersBySeasonQueryResult) res
 			LastName:     queryResult.LastName,
 			BirthDate:    queryResult.DateOfBirth,
 			Email:        membership.EmailAddress{Value: queryResult.Email},
+			TaxCode:      taxCode,
 			Addresses:    []membership.Address{},
 			PhoneNumbers: []membership.PhoneNumber{},
 		},

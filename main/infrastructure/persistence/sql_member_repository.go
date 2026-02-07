@@ -107,6 +107,7 @@ func (r *SQLMemberRepository) GetMembersBySeason(seasonId int64) result.Result[[
 			&resultRow.LastName,
 			&resultRow.Email,
 			&resultRow.DateOfBirth,
+			&resultRow.TaxCode,
 			&resultRow.MembershipNumber,
 			&resultRow.SeasonStartsAt,
 			&resultRow.SeasonEndsAt,
@@ -145,6 +146,7 @@ func (r *SQLMemberRepository) GetMemberById(id domain.Id[m.Member], season int64
 		&resultRow.LastName,
 		&resultRow.DateOfBirth,
 		&resultRow.Email,
+		&resultRow.TaxCode,
 		&resultRow.PhoneNumbers,
 		&resultRow.Addresses,
 		&resultRow.Memberships,
@@ -182,11 +184,17 @@ func (r *SQLMemberRepository) CreateMember(user m.User, createMembership bool, s
 
 	// 1. Insert member
 	var memberId int64
+	// Convert TaxCode to sql.NullString to handle empty strings as NULL
+	taxCode := sql.NullString{
+		String: user.TaxCode,
+		Valid:  user.TaxCode != "",
+	}
 	err = tx.QueryRowContext(ctx, insertMemberQuery,
 		user.FirstName,
 		user.LastName,
 		user.BirthDate,
 		user.Email.Value,
+		taxCode,
 	).Scan(&memberId)
 	if err != nil {
 		return result.Err[m.MemberDetails](errors.RepositoryError{Description: "failed to insert member: " + err.Error()})
@@ -282,6 +290,7 @@ func (r *SQLMemberRepository) CreateMember(user m.User, createMembership bool, s
 			LastName:     user.LastName,
 			BirthDate:    user.BirthDate,
 			Email:        user.Email,
+			TaxCode:      user.TaxCode,
 			Addresses:    user.Addresses,
 			PhoneNumbers: user.PhoneNumbers,
 		},

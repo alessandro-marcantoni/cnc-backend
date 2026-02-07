@@ -122,6 +122,7 @@ func ConvertMemberDetailsToPresentation(domainMember membership.MemberDetails) M
 		LastName:     domainMember.User.LastName,
 		Email:        domainMember.User.Email.Value,
 		BirthDate:    birthDate,
+		TaxCode:      domainMember.User.TaxCode,
 		PhoneNumbers: convertPhoneNumbersToPresentation(domainMember.PhoneNumbers),
 		Addresses:    convertAddressesToPresentation(domainMember.Addresses),
 		Memberships:  convertMembershipsToPresentation(domainMember.Memberships),
@@ -280,6 +281,7 @@ func ConvertCreateMemberRequestToDomain(req CreateMemberRequest) (CreateMemberDa
 		LastName:     req.LastName,
 		BirthDate:    birthDate,
 		Email:        emailResult.Value(),
+		TaxCode:      req.TaxCode,
 		Addresses:    addresses,
 		PhoneNumbers: phoneNumbers,
 	}

@@ -1,6 +1,7 @@
 package persistence
 
 import (
+	"database/sql"
 	"encoding/json"
 	"time"
 )
@@ -11,6 +12,7 @@ type GetMemberByIdQueryResult struct {
 	LastName     string          `json:"last_name"`
 	DateOfBirth  time.Time       `json:"date_of_birth"`
 	Email        string          `json:"email"`
+	TaxCode      sql.NullString  `json:"tax_code"`
 	PhoneNumbers json.RawMessage `json:"phone_numbers"`
 	Addresses    json.RawMessage `json:"addresses"`
 	Memberships  json.RawMessage `json:"memberships"`
@@ -34,21 +36,22 @@ type GetAllMembersQueryResult struct {
 }
 
 type GetMembersBySeasonQueryResult struct {
-	MemberID               int64      `json:"member_id"`
-	FirstName              string     `json:"first_name"`
-	LastName               string     `json:"last_name"`
-	Email                  string     `json:"email"`
-	DateOfBirth            time.Time  `json:"date_of_birth"`
-	MembershipNumber       *int64     `json:"membership_number"`
-	MembershipStatus       string     `json:"membership_status"`
-	SeasonStartsAt         time.Time  `json:"season_starts_at"`
-	SeasonEndsAt           time.Time  `json:"season_ends_at"`
-	ExclusionDeliberatedAt *time.Time `json:"exclusion_deliberated_at"`
-	Price                  *float64   `json:"price"`
-	AmountPaid             *float64   `json:"amount_paid"`
-	PaidAt                 *time.Time `json:"paid_at"`
-	Currency               *string    `json:"currency"`
-	HasUnpaidFacilities    bool       `json:"has_unpaid_facilities"`
+	MemberID               int64          `json:"member_id"`
+	FirstName              string         `json:"first_name"`
+	LastName               string         `json:"last_name"`
+	Email                  string         `json:"email"`
+	DateOfBirth            time.Time      `json:"date_of_birth"`
+	TaxCode                sql.NullString `json:"tax_code"`
+	MembershipNumber       *int64         `json:"membership_number"`
+	MembershipStatus       string         `json:"membership_status"`
+	SeasonStartsAt         time.Time      `json:"season_starts_at"`
+	SeasonEndsAt           time.Time      `json:"season_ends_at"`
+	ExclusionDeliberatedAt *time.Time     `json:"exclusion_deliberated_at"`
+	Price                  *float64       `json:"price"`
+	AmountPaid             *float64       `json:"amount_paid"`
+	PaidAt                 *time.Time     `json:"paid_at"`
+	Currency               *string        `json:"currency"`
+	HasUnpaidFacilities    bool           `json:"has_unpaid_facilities"`
 }
 
 type GetRentedFacilitiesByMemberQueryResult struct {

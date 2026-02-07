@@ -27,6 +27,7 @@ SELECT
     m.last_name,
     m.date_of_birth,
     m.email,
+    m.tax_code,
     COALESCE(
         json_agg(DISTINCT jsonb_build_object(
             'number', pn.number

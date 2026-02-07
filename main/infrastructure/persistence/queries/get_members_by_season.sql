@@ -4,6 +4,7 @@ SELECT
     m.last_name,
     m.email,
     m.date_of_birth,
+    m.tax_code,
     mem.number AS membership_number,
     s.starts_at AS season_starts_at,
     s.ends_at AS season_ends_at,

@@ -64,6 +64,7 @@ type MemberDetails struct {
 	LastName     string        `json:"lastName"`
 	Email        string        `json:"email"`
 	BirthDate    string        `json:"birthDate"`
+	TaxCode      string        `json:"taxCode,omitempty"`
 	PhoneNumbers []PhoneNumber `json:"phoneNumbers"`
 	Addresses    []Address     `json:"addresses"`
 	Memberships  []Membership  `json:"memberships"`
@@ -113,6 +114,7 @@ type CreateMemberRequest struct {
 	LastName         string        `json:"lastName"`
 	BirthDate        string        `json:"birthDate"`
 	Email            string        `json:"email"`
+	TaxCode          string        `json:"taxCode,omitempty"`
 	PhoneNumbers     []PhoneNumber `json:"phoneNumbers"`
 	Addresses        []Address     `json:"addresses"`
 	CreateMembership bool          `json:"createMembership"`
