@@ -6,6 +6,7 @@ import (
 	_ "embed"
 	"fmt"
 	"html/template"
+	"os"
 	"time"
 
 	"github.com/alessandro-marcantoni/cnc-backend/main/domain/reports"
@@ -118,8 +119,30 @@ func (g *ChromeDPPDFGenerator) GenerateMemberDetailPDF(member reports.MemberDeta
 
 // generatePDFFromHTML converts HTML to PDF using chromedp
 func generatePDFFromHTML(html string, landscape bool) (*bytes.Buffer, error) {
+	// Get Chrome path from environment variable or use default
+	chromePath := os.Getenv("CHROME_BIN")
+	if chromePath == "" {
+		chromePath = "/usr/bin/chromium" // Default fallback
+	}
+
+	// Create Chrome options for headless operation in restricted environments
+	opts := append(chromedp.DefaultExecAllocatorOptions[:],
+		chromedp.ExecPath(chromePath),
+		chromedp.Flag("headless", true),
+		chromedp.Flag("disable-gpu", true),
+		chromedp.Flag("no-sandbox", true),
+		chromedp.Flag("disable-dev-shm-usage", true),
+		chromedp.Flag("disable-software-rasterizer", true),
+		chromedp.Flag("disable-extensions", true),
+		chromedp.Flag("disable-setuid-sandbox", true),
+	)
+
+	// Create allocator context with options
+	allocCtx, allocCancel := chromedp.NewExecAllocator(context.Background(), opts...)
+	defer allocCancel()
+
 	// Create context
-	ctx, cancel := chromedp.NewContext(context.Background())
+	ctx, cancel := chromedp.NewContext(allocCtx)
 	defer cancel()
 
 	// Set timeout

@@ -9,11 +9,12 @@ import (
 	"time"
 )
 
-// responseWriter is a wrapper around http.ResponseWriter that captures the status code
+// responseWriter is a wrapper around http.ResponseWriter that captures the status code and response body
 type responseWriter struct {
 	http.ResponseWriter
 	statusCode int
 	written    bool
+	body       bytes.Buffer
 }
 
 // newResponseWriter creates a new responseWriter
@@ -35,10 +36,13 @@ func (rw *responseWriter) WriteHeader(statusCode int) {
 }
 
 // Write ensures status code is captured even if WriteHeader is not explicitly called
+// Also captures the response body for error logging
 func (rw *responseWriter) Write(b []byte) (int, error) {
 	if !rw.written {
 		rw.WriteHeader(http.StatusOK)
 	}
+	// Capture response body for potential error logging
+	rw.body.Write(b)
 	return rw.ResponseWriter.Write(b)
 }
 
@@ -98,7 +102,28 @@ func loggingMiddleware(next http.Handler) http.Handler {
 
 		// Log the request details
 		if r.Method != http.MethodOptions {
-			if bodyLog != "" {
+			// Check if this is an error response (4xx or 5xx status codes)
+			isError := wrappedWriter.statusCode >= 400
+			var errorBody string
+			if isError && wrappedWriter.body.Len() > 0 {
+				errorBody = wrappedWriter.body.String()
+				if len(errorBody) > 500 {
+					errorBody = errorBody[:500] + "... [truncated]"
+				}
+			}
+
+			if bodyLog != "" && errorBody != "" {
+				log.Printf(
+					"[%s] %s %s - Status: %d - Duration: %v - Request Body: %s - Error: %s",
+					r.Method,
+					r.URL.Path,
+					r.RemoteAddr,
+					wrappedWriter.statusCode,
+					duration,
+					bodyLog,
+					errorBody,
+				)
+			} else if bodyLog != "" {
 				log.Printf(
 					"[%s] %s %s - Status: %d - Duration: %v - Body: %s",
 					r.Method,
@@ -107,6 +132,16 @@ func loggingMiddleware(next http.Handler) http.Handler {
 					wrappedWriter.statusCode,
 					duration,
 					bodyLog,
+				)
+			} else if errorBody != "" {
+				log.Printf(
+					"[%s] %s %s - Status: %d - Duration: %v - Error: %s",
+					r.Method,
+					r.URL.Path,
+					r.RemoteAddr,
+					wrappedWriter.statusCode,
+					duration,
+					errorBody,
 				)
 			} else {
 				log.Printf(
