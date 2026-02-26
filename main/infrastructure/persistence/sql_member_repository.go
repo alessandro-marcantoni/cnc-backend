@@ -189,11 +189,18 @@ func (r *SQLMemberRepository) CreateMember(user m.User, createMembership bool, s
 		String: user.TaxCode,
 		Valid:  user.TaxCode != "",
 	}
+	// Convert Email to sql.NullString to handle optional email
+	email := sql.NullString{
+		Valid: user.Email != nil,
+	}
+	if user.Email != nil {
+		email.String = user.Email.Value
+	}
 	err = tx.QueryRowContext(ctx, insertMemberQuery,
 		user.FirstName,
 		user.LastName,
 		user.BirthDate,
-		user.Email.Value,
+		email,
 		taxCode,
 	).Scan(&memberId)
 	if err != nil {

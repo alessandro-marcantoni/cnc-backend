@@ -116,11 +116,16 @@ func ConvertMemberDetailsToPresentation(domainMember membership.MemberDetails) M
 		birthDate = domainMember.User.BirthDate.Format("2006-01-02")
 	}
 
+	email := ""
+	if domainMember.User.Email != nil {
+		email = domainMember.User.Email.Value
+	}
+
 	return MemberDetails{
 		ID:           domainMember.User.Id.Value,
 		FirstName:    domainMember.User.FirstName,
 		LastName:     domainMember.User.LastName,
-		Email:        domainMember.User.Email.Value,
+		Email:        email,
 		BirthDate:    birthDate,
 		TaxCode:      domainMember.User.TaxCode,
 		PhoneNumbers: convertPhoneNumbersToPresentation(domainMember.PhoneNumbers),
@@ -130,10 +135,15 @@ func ConvertMemberDetailsToPresentation(domainMember membership.MemberDetails) M
 }
 
 func ConvertMemberToSummary(domainMember membership.Member) MemberSummary {
+	email := ""
+	if domainMember.User.Email != nil {
+		email = domainMember.User.Email.Value
+	}
+
 	return MemberSummary{
 		ID:    domainMember.User.Id.Value,
 		Name:  fmt.Sprintf("%s %s", domainMember.User.FirstName, domainMember.User.LastName),
-		Email: domainMember.User.Email.Value,
+		Email: email,
 	}
 }
 
@@ -263,10 +273,15 @@ func ConvertCreateMemberRequestToDomain(req CreateMemberRequest) (CreateMemberDa
 		return CreateMemberData{}, fmt.Errorf("invalid birth date: %w", err)
 	}
 
-	// Create email
-	emailResult := membership.NewEmailAddress(req.Email)
-	if !emailResult.IsSuccess() {
-		return CreateMemberData{}, fmt.Errorf("invalid email: %s", emailResult.Error().Error())
+	// Create email (optional)
+	var email *membership.EmailAddress = nil
+	if req.Email != "" {
+		emailResult := membership.NewEmailAddress(req.Email)
+		if !emailResult.IsSuccess() {
+			return CreateMemberData{}, fmt.Errorf("invalid email: %s", emailResult.Error().Error())
+		}
+		emailVal := emailResult.Value()
+		email = &emailVal
 	}
 
 	// Convert phone numbers
@@ -295,7 +310,7 @@ func ConvertCreateMemberRequestToDomain(req CreateMemberRequest) (CreateMemberDa
 		FirstName:    req.FirstName,
 		LastName:     req.LastName,
 		BirthDate:    birthDate,
-		Email:        emailResult.Value(),
+		Email:        email,
 		TaxCode:      req.TaxCode,
 		Addresses:    addresses,
 		PhoneNumbers: phoneNumbers,

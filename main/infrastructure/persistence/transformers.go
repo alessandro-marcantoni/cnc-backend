@@ -153,13 +153,22 @@ func MapToMemberFromMemberByIdQuery(queryResult GetMemberByIdQueryResult) result
 		taxCode = queryResult.TaxCode.String
 	}
 
+	var email *membership.EmailAddress = nil
+	if queryResult.Email != "" {
+		emailResult := membership.NewEmailAddress(queryResult.Email)
+		if emailResult.IsSuccess() {
+			emailVal := emailResult.Value()
+			email = &emailVal
+		}
+	}
+
 	return result.Ok(membership.MemberDetails{
 		User: membership.User{
 			Id:           domain.Id[membership.User]{Value: queryResult.MemberID},
 			FirstName:    queryResult.FirstName,
 			LastName:     queryResult.LastName,
 			BirthDate:    queryResult.DateOfBirth,
-			Email:        membership.EmailAddress{Value: queryResult.Email},
+			Email:        email,
 			TaxCode:      taxCode,
 			Addresses:    addresses,
 			PhoneNumbers: phoneNumbers,
@@ -241,7 +250,7 @@ func MapToMemberFromAllMembersQuery(queryResult GetAllMembersQueryResult) result
 			FirstName:    queryResult.FirstName,
 			LastName:     queryResult.LastName,
 			BirthDate:    queryResult.DateOfBirth,
-			Email:        membership.EmailAddress{Value: "sample.email@example.com"},
+			Email:        nil,
 			TaxCode:      "",
 			Addresses:    []membership.Address{},
 			PhoneNumbers: []membership.PhoneNumber{},
@@ -298,13 +307,22 @@ func MapToMemberFromQueryBySeason(queryResult GetMembersBySeasonQueryResult) res
 		taxCode = queryResult.TaxCode.String
 	}
 
+	var email *membership.EmailAddress = nil
+	if queryResult.Email != "" {
+		emailResult := membership.NewEmailAddress(queryResult.Email)
+		if emailResult.IsSuccess() {
+			emailVal := emailResult.Value()
+			email = &emailVal
+		}
+	}
+
 	return result.Ok(membership.Member{
 		User: membership.User{
 			Id:           domain.Id[membership.User]{Value: queryResult.MemberID},
 			FirstName:    queryResult.FirstName,
 			LastName:     queryResult.LastName,
 			BirthDate:    queryResult.DateOfBirth,
-			Email:        membership.EmailAddress{Value: queryResult.Email},
+			Email:        email,
 			TaxCode:      taxCode,
 			Addresses:    []membership.Address{},
 			PhoneNumbers: []membership.PhoneNumber{},

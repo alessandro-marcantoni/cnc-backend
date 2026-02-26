@@ -11,8 +11,8 @@ type User struct {
 	FirstName    string
 	LastName     string
 	BirthDate    time.Time
-	Email        EmailAddress
-	TaxCode      string // Italian tax code (Codice Fiscale)
+	Email        *EmailAddress // Optional email
+	TaxCode      string        // Italian tax code (Codice Fiscale)
 	Addresses    []Address
 	PhoneNumbers []PhoneNumber
 }
