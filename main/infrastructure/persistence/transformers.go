@@ -154,8 +154,8 @@ func MapToMemberFromMemberByIdQuery(queryResult GetMemberByIdQueryResult) result
 	}
 
 	var email *membership.EmailAddress = nil
-	if queryResult.Email != "" {
-		emailResult := membership.NewEmailAddress(queryResult.Email)
+	if queryResult.Email.Valid && queryResult.Email.String != "" {
+		emailResult := membership.NewEmailAddress(queryResult.Email.String)
 		if emailResult.IsSuccess() {
 			emailVal := emailResult.Value()
 			email = &emailVal
@@ -308,8 +308,8 @@ func MapToMemberFromQueryBySeason(queryResult GetMembersBySeasonQueryResult) res
 	}
 
 	var email *membership.EmailAddress = nil
-	if queryResult.Email != "" {
-		emailResult := membership.NewEmailAddress(queryResult.Email)
+	if queryResult.Email.Valid && queryResult.Email.String != "" {
+		emailResult := membership.NewEmailAddress(queryResult.Email.String)
 		if emailResult.IsSuccess() {
 			emailVal := emailResult.Value()
 			email = &emailVal

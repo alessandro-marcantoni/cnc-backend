@@ -11,7 +11,7 @@ type GetMemberByIdQueryResult struct {
 	FirstName    string          `json:"first_name"`
 	LastName     string          `json:"last_name"`
 	DateOfBirth  time.Time       `json:"date_of_birth"`
-	Email        string          `json:"email"`
+	Email        sql.NullString  `json:"email"`
 	TaxCode      sql.NullString  `json:"tax_code"`
 	PhoneNumbers json.RawMessage `json:"phone_numbers"`
 	Addresses    json.RawMessage `json:"addresses"`
@@ -39,7 +39,7 @@ type GetMembersBySeasonQueryResult struct {
 	MemberID               int64          `json:"member_id"`
 	FirstName              string         `json:"first_name"`
 	LastName               string         `json:"last_name"`
-	Email                  string         `json:"email"`
+	Email                  sql.NullString `json:"email"`
 	DateOfBirth            time.Time      `json:"date_of_birth"`
 	TaxCode                sql.NullString `json:"tax_code"`
 	MembershipNumber       *int64         `json:"membership_number"`
