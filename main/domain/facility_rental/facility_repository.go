@@ -18,6 +18,7 @@ type FacilityRepository interface {
 		season int64,
 		price float64,
 		boatInfo *BoatInfo,
+		leerboardInfo *LeerboardInfo,
 	) result.Result[RentedFacility]
 	FreeFacility(rentedFacilityId domain.Id[RentedFacility]) result.Result[bool]
 }

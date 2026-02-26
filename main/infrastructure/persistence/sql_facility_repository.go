@@ -31,6 +31,9 @@ var insertBoatQuery string
 //go:embed queries/insert_insurance.sql
 var insertInsuranceQuery string
 
+//go:embed queries/insert_leerboard.sql
+var insertLeerboardQuery string
+
 //go:embed queries/get_facility_pricing_rules.sql
 var getFacilityPricingRulesQuery string
 
@@ -60,8 +63,9 @@ func (r *SQLFacilityRepository) GetFacilitiesCatalog() []facilityrental.Facility
 		var description sql.NullString
 		var suggestedPrice float64
 		var hasBoat bool
+		var hasLeerboard bool
 
-		err := rows.Scan(&id, &name, &description, &suggestedPrice, &hasBoat)
+		err := rows.Scan(&id, &name, &description, &suggestedPrice, &hasBoat, &hasLeerboard)
 		if err != nil {
 			continue
 		}
@@ -72,6 +76,7 @@ func (r *SQLFacilityRepository) GetFacilitiesCatalog() []facilityrental.Facility
 			Description:    description.String,
 			SuggestedPrice: suggestedPrice,
 			HasBoat:        hasBoat,
+			HasLeerboard:   hasLeerboard,
 		}
 		facilityTypes = append(facilityTypes, facilityType)
 	}
@@ -186,12 +191,16 @@ func (r *SQLFacilityRepository) GetFacilitiesRentedByMember(memberId domain.Id[m
 			&dto.SuggestedPrice,
 			&dto.BoatID,
 			&dto.BoatName,
-			&dto.LengthMeters,
-			&dto.WidthMeters,
+			&dto.BoatLengthMeters,
+			&dto.BoatWidthMeters,
 			&dto.InsuranceID,
 			&dto.InsuranceProvider,
 			&dto.InsuranceNumber,
 			&dto.InsuranceExpiresAt,
+			&dto.LeerboardID,
+			&dto.LeerboardColor,
+			&dto.LeerboardType,
+			&dto.LeerboardLength,
 			&dto.PaymentID,
 			&dto.PaymentAmount,
 			&dto.PaymentCurrency,
@@ -216,6 +225,7 @@ func (r *SQLFacilityRepository) RentFacility(
 	season int64,
 	price float64,
 	boatInfo *facilityrental.BoatInfo,
+	leerboardInfo *facilityrental.LeerboardInfo,
 ) result.Result[facilityrental.RentedFacility] {
 	ctx := context.Background()
 
@@ -264,6 +274,28 @@ func (r *SQLFacilityRepository) RentFacility(
 					return result.Err[facilityrental.RentedFacility](errors.RepositoryError{Description: "failed to insert insurance info: " + err.Error()})
 				}
 			}
+		}
+	}
+
+	// Insert leerboard info if provided
+	if leerboardInfo != nil {
+		color := sql.NullString{Valid: false}
+		if leerboardInfo.Color != "" {
+			color = sql.NullString{String: leerboardInfo.Color, Valid: true}
+		}
+		leerboardType := sql.NullString{Valid: false}
+		if leerboardInfo.Type != "" {
+			leerboardType = sql.NullString{String: leerboardInfo.Type, Valid: true}
+		}
+
+		_, err = tx.ExecContext(ctx, insertLeerboardQuery,
+			rentedFacilityId,
+			color,
+			leerboardType,
+			leerboardInfo.LengthMeters,
+		)
+		if err != nil {
+			return result.Err[facilityrental.RentedFacility](errors.RepositoryError{Description: "failed to insert leerboard info: " + err.Error()})
 		}
 	}
 

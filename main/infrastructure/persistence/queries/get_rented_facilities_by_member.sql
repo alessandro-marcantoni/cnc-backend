@@ -14,13 +14,18 @@ SELECT
 
     b.id                  AS boat_id,
     b.name                AS boat_name,
-    b.length_meters,
-    b.width_meters,
+    b.length_meters       AS boat_length_meters,
+    b.width_meters        AS boat_width_meters,
 
     i.id                  AS insurance_id,
     i.provider            AS insurance_provider,
     i.number              AS insurance_number,
     i.expires_at          AS insurance_expires_at,
+
+    l.id                  AS leerboard_id,
+    l.color               AS leerboard_color,
+    l.type                AS leerboard_type,
+    l.length_meters       AS leerboard_length_meters,
 
     p.id                  AS payment_id,
     p.amount              AS payment_amount,
@@ -39,6 +44,8 @@ LEFT JOIN boats b
     ON b.rented_facility_id = rf.id
 LEFT JOIN insurances i
     ON i.boat_id = b.id
+LEFT JOIN leeboards l
+    ON l.rented_facility_id = rf.id
 LEFT JOIN payments p
     ON p.rented_facility_id = rf.id
 WHERE rf.member_id = $1

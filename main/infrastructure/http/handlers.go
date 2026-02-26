@@ -269,6 +269,22 @@ func RentedFacilitiesHandler(w http.ResponseWriter, r *http.Request) {
 			}
 		}
 
+		// Convert leerboard info from presentation to domain model if provided
+		var leerboardInfo *facilityrental.LeerboardInfo = nil
+		if req.LeerboardInfo != nil {
+			// Validate leerboard info
+			if req.LeerboardInfo.LengthMeters <= 0 {
+				presentation.WriteError(w, http.StatusBadRequest, "leerboard length must be greater than 0")
+				return
+			}
+
+			leerboardInfo = &facilityrental.LeerboardInfo{
+				Color:        req.LeerboardInfo.Color,
+				Type:         req.LeerboardInfo.Type,
+				LengthMeters: req.LeerboardInfo.LengthMeters,
+			}
+		}
+
 		// Rent facility
 		result := rentalService.RentService(
 			facilityId,
@@ -276,6 +292,7 @@ func RentedFacilitiesHandler(w http.ResponseWriter, r *http.Request) {
 			req.SeasonId,
 			req.Price,
 			boatInfo,
+			leerboardInfo,
 		)
 		if !result.IsSuccess() {
 			presentation.WriteError(w, http.StatusInternalServerError, result.Error().Error())

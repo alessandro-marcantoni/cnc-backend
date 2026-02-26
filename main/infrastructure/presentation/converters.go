@@ -148,6 +148,7 @@ func ConvertRentedFacilityToPresentation(rf facilityrental.RentedFacility) Rente
 		Price:                   rf.GetPrice(),
 		ExpiresAt:               rf.GetValidity().ToDate.Format("2006-01-02"),
 		BoatInfo:                nil,
+		LeerboardInfo:           nil,
 		Payment:                 nil,
 	}
 
@@ -191,6 +192,19 @@ func ConvertRentedFacilityToPresentation(rf facilityrental.RentedFacility) Rente
 		}
 	}
 
+	// Check if this is a leerboard facility
+	if rf.GetType() == facilityrental.LeerboardFacility {
+		if rfWithLeerboard, ok := rf.(facilityrental.RentedFacilityWithLeerboard); ok {
+			leerboardInfo := &LeerboardInfo{
+				Color:        rfWithLeerboard.LeerboardInfo.Color,
+				Type:         rfWithLeerboard.LeerboardInfo.Type,
+				LengthMeters: rfWithLeerboard.LeerboardInfo.LengthMeters,
+			}
+
+			rentedFacility.LeerboardInfo = leerboardInfo
+		}
+	}
+
 	return rentedFacility
 }
 
@@ -203,6 +217,7 @@ func ConvertFacilityTypesToPresentation(domainFacilityTypes []facilityrental.Fac
 			Description:    ft.Description,
 			SuggestedPrice: ft.SuggestedPrice,
 			HasBoat:        ft.HasBoat,
+			HasLeerboard:   ft.HasLeerboard,
 		}
 	}
 	return presentationFacilityTypes

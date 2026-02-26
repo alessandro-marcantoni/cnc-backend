@@ -45,17 +45,24 @@ type Insurance struct {
 	ExpiresAt string `json:"expiresAt"`
 }
 
+type LeerboardInfo struct {
+	Color        string  `json:"color,omitempty"`
+	Type         string  `json:"type,omitempty"`
+	LengthMeters float64 `json:"lengthMeters"`
+}
+
 type RentedFacility struct {
-	ID                      int64     `json:"id"`
-	FacilityID              int64     `json:"facilityId"`
-	FacilityIdentifier      string    `json:"facilityIdentifier"`
-	FacilityName            string    `json:"facilityName"`
-	FacilityTypeDescription string    `json:"facilityTypeDescription"`
-	RentedAt                string    `json:"rentedAt"`
-	ExpiresAt               string    `json:"expiresAt"`
-	Price                   float64   `json:"price"`
-	Payment                 *Payment  `json:"payment"`
-	BoatInfo                *BoatInfo `json:"boatInfo"`
+	ID                      int64          `json:"id"`
+	FacilityID              int64          `json:"facilityId"`
+	FacilityIdentifier      string         `json:"facilityIdentifier"`
+	FacilityName            string         `json:"facilityName"`
+	FacilityTypeDescription string         `json:"facilityTypeDescription"`
+	RentedAt                string         `json:"rentedAt"`
+	ExpiresAt               string         `json:"expiresAt"`
+	Price                   float64        `json:"price"`
+	Payment                 *Payment       `json:"payment"`
+	BoatInfo                *BoatInfo      `json:"boatInfo"`
+	LeerboardInfo           *LeerboardInfo `json:"leerboardInfo"`
 }
 
 type MemberDetails struct {
@@ -93,6 +100,7 @@ type FacilityType struct {
 	Description    string  `json:"description"`
 	SuggestedPrice float64 `json:"suggestedPrice"`
 	HasBoat        bool    `json:"hasBoat"`
+	HasLeerboard   bool    `json:"hasLeerboard"`
 }
 
 type FacilityWithStatus struct {
@@ -131,13 +139,14 @@ type AddMembershipRequest struct {
 }
 
 type RentFacilityRequest struct {
-	FacilityId int64     `json:"facilityId"`
-	MemberId   int64     `json:"memberId"`
-	RentedAt   string    `json:"rentedAt"`
-	ExpiresAt  string    `json:"expiresAt"`
-	SeasonId   int64     `json:"seasonId"`
-	Price      float64   `json:"price"`
-	BoatInfo   *BoatInfo `json:"boatInfo,omitempty"`
+	FacilityId    int64          `json:"facilityId"`
+	MemberId      int64          `json:"memberId"`
+	RentedAt      string         `json:"rentedAt"`
+	ExpiresAt     string         `json:"expiresAt"`
+	SeasonId      int64          `json:"seasonId"`
+	Price         float64        `json:"price"`
+	BoatInfo      *BoatInfo      `json:"boatInfo,omitempty"`
+	LeerboardInfo *LeerboardInfo `json:"leerboardInfo,omitempty"`
 }
 
 type CreatePaymentRequest struct {

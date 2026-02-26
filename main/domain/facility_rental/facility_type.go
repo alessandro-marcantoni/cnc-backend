@@ -8,4 +8,5 @@ type FacilityType struct {
 	Description    string
 	SuggestedPrice float64
 	HasBoat        bool
+	HasLeerboard   bool
 }

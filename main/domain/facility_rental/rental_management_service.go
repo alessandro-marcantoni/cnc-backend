@@ -65,9 +65,10 @@ func (this RentalManagementService) RentService(
 	season int64,
 	price float64,
 	boat *BoatInfo,
+	leerboard *LeerboardInfo,
 ) result.Result[RentedFacility] {
 	// Rent the facility
-	rentResult := this.repository.RentFacility(memberId, facilityId, season, price, boat)
+	rentResult := this.repository.RentFacility(memberId, facilityId, season, price, boat, leerboard)
 	if !rentResult.IsSuccess() {
 		return rentResult
 	}

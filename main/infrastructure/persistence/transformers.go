@@ -361,7 +361,7 @@ func ConvertDTOToRentedFacility(dto GetRentedFacilitiesByMemberQueryResult) faci
 	}
 
 	// Check if this is a boat facility (has boat info)
-	if dto.BoatID != nil && dto.BoatName != nil && dto.LengthMeters != nil && dto.WidthMeters != nil {
+	if dto.BoatID != nil && dto.BoatName != nil && dto.BoatLengthMeters != nil && dto.BoatWidthMeters != nil {
 		// Determine insurance info
 		var insuranceInfo facilityrental.BoatInsuranceInfo
 		if dto.InsuranceID != nil && dto.InsuranceProvider != nil && dto.InsuranceNumber != nil && dto.InsuranceExpiresAt != nil {
@@ -376,8 +376,8 @@ func ConvertDTOToRentedFacility(dto GetRentedFacilitiesByMemberQueryResult) faci
 
 		boatInfo := facilityrental.BoatInfo{
 			Name:          *dto.BoatName,
-			LengthMeters:  *dto.LengthMeters,
-			WidthMeters:   *dto.WidthMeters,
+			LengthMeters:  *dto.BoatLengthMeters,
+			WidthMeters:   *dto.BoatWidthMeters,
 			InsuranceInfo: insuranceInfo,
 		}
 
@@ -392,7 +392,35 @@ func ConvertDTOToRentedFacility(dto GetRentedFacilitiesByMemberQueryResult) faci
 		}
 	}
 
-	// Simple facility without boat
+	// Check if this is a leerboard facility (has leerboard info)
+	if dto.LeerboardID != nil && dto.LeerboardLength != nil {
+		color := ""
+		if dto.LeerboardColor != nil {
+			color = *dto.LeerboardColor
+		}
+		leerboardType := ""
+		if dto.LeerboardType != nil {
+			leerboardType = *dto.LeerboardType
+		}
+
+		leerboardInfo := facilityrental.LeerboardInfo{
+			Color:        color,
+			Type:         leerboardType,
+			LengthMeters: *dto.LeerboardLength,
+		}
+
+		return facilityrental.RentedFacilityWithLeerboard{
+			Id:            domain.NewId[facilityrental.RentedFacility](dto.RentedFacilityID),
+			MemberId:      domain.NewId[membership.Member](0), // Will be filled from query param
+			Facility:      facility,
+			Validity:      validity,
+			Price:         dto.Price,
+			Payment:       paymentInfo,
+			LeerboardInfo: leerboardInfo,
+		}
+	}
+
+	// Simple facility without boat or leerboard
 	return facilityrental.SimpleRentedFacility{
 		Id:       domain.NewId[facilityrental.RentedFacility](dto.RentedFacilityID),
 		MemberId: domain.NewId[membership.Member](0), // Will be filled from query param

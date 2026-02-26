@@ -21,8 +21,9 @@ type RentedFacility interface {
 type RentedFacilityType string
 
 const (
-	SimpleFacility RentedFacilityType = "SIMPLE_FACILITY"
-	BoatFacility   RentedFacilityType = "BOAT_FACILITY"
+	SimpleFacility    RentedFacilityType = "SIMPLE_FACILITY"
+	BoatFacility      RentedFacilityType = "BOAT_FACILITY"
+	LeerboardFacility RentedFacilityType = "LEERBOARD_FACILITY"
 )
 
 type SimpleRentedFacility struct {
@@ -42,6 +43,16 @@ type RentedFacilityWithBoat struct {
 	Price    float64
 	Payment  payment.Payment
 	BoatInfo BoatInfo
+}
+
+type RentedFacilityWithLeerboard struct {
+	Id            domain.Id[RentedFacility]
+	MemberId      domain.Id[membership.Member]
+	Facility      Facility
+	Validity      RentalValidity
+	Price         float64
+	Payment       payment.Payment
+	LeerboardInfo LeerboardInfo
 }
 
 type RentalValidity struct {
@@ -103,4 +114,32 @@ func (r RentedFacilityWithBoat) GetPayment() payment.Payment {
 
 func (r RentedFacilityWithBoat) GetType() RentedFacilityType {
 	return BoatFacility
+}
+
+func (r RentedFacilityWithLeerboard) GetId() domain.Id[RentedFacility] {
+	return r.Id
+}
+
+func (r RentedFacilityWithLeerboard) GetMemberId() domain.Id[membership.Member] {
+	return r.MemberId
+}
+
+func (r RentedFacilityWithLeerboard) GetFacility() Facility {
+	return r.Facility
+}
+
+func (r RentedFacilityWithLeerboard) GetValidity() RentalValidity {
+	return r.Validity
+}
+
+func (r RentedFacilityWithLeerboard) GetPrice() float64 {
+	return r.Price
+}
+
+func (r RentedFacilityWithLeerboard) GetPayment() payment.Payment {
+	return r.Payment
+}
+
+func (r RentedFacilityWithLeerboard) GetType() RentedFacilityType {
+	return LeerboardFacility
 }
