@@ -848,11 +848,16 @@ func MemberListPDFHandler(w http.ResponseWriter, r *http.Request) {
 	// Convert to report format
 	memberSummaries := make([]reports.MemberSummary, len(members))
 	for i, member := range members {
+		email := ""
+		if member.User.Email != nil {
+			email = member.User.Email.Value
+		}
+
 		memberSummaries[i] = reports.MemberSummary{
 			ID:                  member.User.Id.Value,
 			FirstName:           member.User.FirstName,
 			LastName:            member.User.LastName,
-			Email:               member.User.Email.Value,
+			Email:               email,
 			BirthDate:           member.User.BirthDate.Format("02/01/2006"),
 			MembershipNumber:    member.Membership.Number,
 			MembershipStatus:    string(member.Membership.Status.GetStatus()),
@@ -942,11 +947,16 @@ func MemberDetailPDFHandler(w http.ResponseWriter, r *http.Request) {
 	memberDetails := memberResult.Value()
 
 	// Convert member to report format
+	email := ""
+	if memberDetails.User.Email != nil {
+		email = memberDetails.User.Email.Value
+	}
+
 	memberDetail := reports.MemberDetail{
 		ID:        memberDetails.User.Id.Value,
 		FirstName: memberDetails.User.FirstName,
 		LastName:  memberDetails.User.LastName,
-		Email:     memberDetails.User.Email.Value,
+		Email:     email,
 		BirthDate: memberDetails.User.BirthDate.Format("02/01/2006"),
 	}
 
