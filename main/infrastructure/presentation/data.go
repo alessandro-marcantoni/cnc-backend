@@ -36,6 +36,7 @@ type BoatInfo struct {
 	Name         string      `json:"name"`
 	LengthMeters float64     `json:"lengthMeters"`
 	WidthMeters  float64     `json:"widthMeters"`
+	EngineInfo   string      `json:"engineInfo,omitempty"`
 	Insurances   []Insurance `json:"insurances,omitempty"`
 }
 

@@ -4,6 +4,7 @@ type BoatInfo struct {
 	Name          string
 	LengthMeters  float64
 	WidthMeters   float64
+	EngineInfo    string
 	InsuranceInfo BoatInsuranceInfo
 }
 

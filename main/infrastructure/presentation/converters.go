@@ -183,6 +183,7 @@ func ConvertRentedFacilityToPresentation(rf facilityrental.RentedFacility) Rente
 				Name:         rfWithBoat.BoatInfo.Name,
 				LengthMeters: rfWithBoat.BoatInfo.LengthMeters,
 				WidthMeters:  rfWithBoat.BoatInfo.WidthMeters,
+				EngineInfo:   rfWithBoat.BoatInfo.EngineInfo,
 			}
 
 			// Add insurance information if available

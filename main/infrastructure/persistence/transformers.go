@@ -392,10 +392,16 @@ func ConvertDTOToRentedFacility(dto GetRentedFacilitiesByMemberQueryResult) faci
 			insuranceInfo = facilityrental.NoBoatInsurance{}
 		}
 
+		engineInfo := ""
+		if dto.BoatEngineInfo != nil {
+			engineInfo = *dto.BoatEngineInfo
+		}
+
 		boatInfo := facilityrental.BoatInfo{
 			Name:          *dto.BoatName,
 			LengthMeters:  *dto.BoatLengthMeters,
 			WidthMeters:   *dto.BoatWidthMeters,
+			EngineInfo:    engineInfo,
 			InsuranceInfo: insuranceInfo,
 		}
 

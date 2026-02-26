@@ -261,6 +261,7 @@ func RentedFacilitiesHandler(w http.ResponseWriter, r *http.Request) {
 				Name:         req.BoatInfo.Name,
 				LengthMeters: req.BoatInfo.LengthMeters,
 				WidthMeters:  req.BoatInfo.WidthMeters,
+				EngineInfo:   req.BoatInfo.EngineInfo,
 				InsuranceInfo: facilityrental.BoatInsurance{
 					ProviderName:   insurance.Provider,
 					PolicyNumber:   insurance.Number,
