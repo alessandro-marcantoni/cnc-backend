@@ -1,5 +1,6 @@
 WITH membership_details AS (
     SELECT
+        m.member_id,
         m.id AS membership_id,
         m.number AS membership_number,
         mp.id AS membership_period_id,
@@ -72,7 +73,7 @@ SELECT
 FROM members m
 LEFT JOIN phone_numbers pn ON m.id = pn.member_id
 LEFT JOIN addresses a ON m.id = a.member_id
-LEFT JOIN membership_details md ON m.id = md.membership_id
+LEFT JOIN membership_details md ON m.id = md.member_id
 LEFT JOIN membership_statuses ms ON ms.id = md.status_id
 WHERE m.id = $1
 GROUP BY m.id;
