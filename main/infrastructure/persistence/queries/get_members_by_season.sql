@@ -21,6 +21,7 @@ SELECT
             LEFT JOIN payments fp ON fp.rented_facility_id = rf.id
             WHERE rf.member_id = m.id
             AND rf.season_id = s.id
+            AND rf.deleted_at IS NULL
             AND fp.id IS NULL
         ) THEN true
         ELSE false
