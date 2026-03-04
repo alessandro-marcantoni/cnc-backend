@@ -754,6 +754,22 @@ func SuggestedPriceHandler(w http.ResponseWriter, r *http.Request) {
 		seasonID = parsedSeason
 	}
 
+	// Get boat_length from query parameter (optional, only for boat facilities)
+	var boatLengthMeters *float64
+	boatLengthStr := r.URL.Query().Get("boat_length")
+	if boatLengthStr != "" {
+		boatLength, err := strconv.ParseFloat(boatLengthStr, 64)
+		if err != nil {
+			presentation.WriteError(w, http.StatusBadRequest, "invalid boat_length")
+			return
+		}
+		if boatLength <= 0 {
+			presentation.WriteError(w, http.StatusBadRequest, "boat_length must be greater than 0")
+			return
+		}
+		boatLengthMeters = &boatLength
+	}
+
 	// Fetch facility type from catalog to get base price
 	catalog := facilityRepo.GetFacilitiesCatalog()
 	var facilityType *facilityrental.FacilityType
@@ -774,12 +790,13 @@ func SuggestedPriceHandler(w http.ResponseWriter, r *http.Request) {
 	facilityTypeId := domain.Id[facilityrental.FacilityType]{Value: facilityTypeID}
 	memberId := domain.Id[membership.User]{Value: memberID}
 
-	// Calculate suggested price with discounts
-	suggestedPrice := rentalService.GetSuggestedPriceForMember(
+	// Calculate suggested price with boat length support
+	priceResult := rentalService.GetSuggestedPriceWithBoatLength(
 		facilityTypeId,
 		basePrice,
 		memberId,
 		seasonID,
+		boatLengthMeters,
 	)
 
 	// Get applicable discount rules for informational purposes
@@ -789,18 +806,32 @@ func SuggestedPriceHandler(w http.ResponseWriter, r *http.Request) {
 		seasonID,
 	)
 
-	hasSpecialPrice := suggestedPrice < basePrice
-	savingsAmount := 0.0
-	if hasSpecialPrice {
-		savingsAmount = basePrice - suggestedPrice
+	// Get boat length tiers if this is a boat facility
+	var boatLengthTiers []map[string]any
+	if facilityType.HasBoat {
+		if tiers, hasTiers := rentalService.GetBoatLengthTiers(facilityTypeId); hasTiers {
+			boatLengthTiers = make([]map[string]any, len(tiers))
+			for i, tier := range tiers {
+				boatLengthTiers[i] = map[string]any{
+					"minLengthMeters": tier.MinLengthMeters,
+					"maxLengthMeters": tier.MaxLengthMeters,
+					"price":           tier.Price,
+				}
+			}
+		}
 	}
 
 	response := map[string]any{
-		"suggestedPrice":  suggestedPrice,
-		"basePrice":       basePrice,
-		"savingsAmount":   savingsAmount,
-		"hasSpecialPrice": hasSpecialPrice,
-		"applicableRules": len(applicableDiscounts),
+		"suggestedPrice":        priceResult.FinalPrice,
+		"basePrice":             priceResult.BasePrice,
+		"pricingMethod":         string(priceResult.PricingMethod),
+		"discountApplied":       priceResult.DiscountApplied,
+		"discountAmount":        priceResult.DiscountAmount,
+		"boatLengthTierApplied": priceResult.BoatLengthTierApplied,
+		"boatLengthTierPrice":   priceResult.BoatLengthTierPrice,
+		"applicableRules":       len(applicableDiscounts),
+		"boatLengthTiers":       boatLengthTiers,
+		"hasBoatLengthPricing":  facilityType.HasBoat && len(boatLengthTiers) > 0,
 	}
 
 	presentation.WriteJSON(w, http.StatusOK, response)

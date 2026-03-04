@@ -37,6 +37,9 @@ var insertLeerboardQuery string
 //go:embed queries/get_facility_pricing_rules.sql
 var getFacilityPricingRulesQuery string
 
+//go:embed queries/get_all_boat_length_pricing_tiers.sql
+var getAllBoatLengthPricingTiersQuery string
+
 //go:embed queries/delete_rented_facility.sql
 var deleteRentedFacilityQuery string
 
@@ -368,6 +371,61 @@ func (r *SQLFacilityRepository) GetPricingRules() []facilityrental.PricingRule {
 	}
 
 	return pricingRules
+}
+
+func (r *SQLFacilityRepository) GetBoatLengthPricingTiers() []facilityrental.BoatLengthPricingTier {
+	rows, err := r.db.Query(getAllBoatLengthPricingTiersQuery)
+	if err != nil {
+		return []facilityrental.BoatLengthPricingTier{}
+	}
+	defer rows.Close()
+
+	var tiers []facilityrental.BoatLengthPricingTier
+
+	for rows.Next() {
+		var id int64
+		var facilityTypeId int64
+		var minLengthMeters float64
+		var maxLengthMeters sql.NullFloat64
+		var price float64
+		var currency string
+		var active bool
+		var createdAt time.Time
+		var updatedAt time.Time
+
+		err := rows.Scan(
+			&id,
+			&facilityTypeId,
+			&minLengthMeters,
+			&maxLengthMeters,
+			&price,
+			&currency,
+			&active,
+			&createdAt,
+			&updatedAt,
+		)
+		if err != nil {
+			continue
+		}
+
+		var maxLengthPtr *float64
+		if maxLengthMeters.Valid {
+			maxLengthPtr = &maxLengthMeters.Float64
+		}
+
+		tier := facilityrental.BoatLengthPricingTier{
+			Id:              domain.Id[facilityrental.BoatLengthPricingTier]{Value: id},
+			FacilityTypeId:  domain.Id[facilityrental.FacilityType]{Value: facilityTypeId},
+			MinLengthMeters: minLengthMeters,
+			MaxLengthMeters: maxLengthPtr,
+			Price:           price,
+			Currency:        currency,
+			Active:          active,
+		}
+		tiers = append(tiers, tier)
+	}
+
+	return tiers
 }
 
 func (r *SQLFacilityRepository) FreeFacility(rentedFacilityId domain.Id[facilityrental.RentedFacility]) result.Result[bool] {

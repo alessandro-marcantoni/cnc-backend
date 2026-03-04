@@ -8,9 +8,10 @@ import (
 )
 
 type RentalManagementService struct {
-	repository            FacilityRepository
-	waitingListRepository WaitingListRepository
-	priceCalculator       *pricing.SuggestedPriceCalculator
+	repository               FacilityRepository
+	waitingListRepository    WaitingListRepository
+	priceCalculator          *pricing.SuggestedPriceCalculator
+	compositePriceCalculator *pricing.CompositePriceCalculator
 }
 
 func NewRentalManagementService(repository FacilityRepository, waitingListRepository WaitingListRepository) *RentalManagementService {
@@ -20,10 +21,23 @@ func NewRentalManagementService(repository FacilityRepository, waitingListReposi
 	// Build pricing configs from repository data
 	pricingConfigs := buildPricingConfigs(pricingRules)
 
+	// Create discount-based price calculator
+	discountCalculator := pricing.NewSuggestedPriceCalculator(pricingConfigs)
+
+	// Build boat length pricing configs
+	boatLengthConfigs := buildBoatLengthPricingConfigs(repository)
+
+	// Create boat-length price calculator
+	boatLengthCalculator := pricing.NewBoatLengthPriceCalculator(boatLengthConfigs)
+
+	// Create composite price calculator
+	compositePriceCalculator := pricing.NewCompositePriceCalculator(discountCalculator, boatLengthCalculator)
+
 	return &RentalManagementService{
-		repository:            repository,
-		waitingListRepository: waitingListRepository,
-		priceCalculator:       pricing.NewSuggestedPriceCalculator(pricingConfigs),
+		repository:               repository,
+		waitingListRepository:    waitingListRepository,
+		priceCalculator:          discountCalculator,
+		compositePriceCalculator: compositePriceCalculator,
 	}
 }
 
@@ -53,6 +67,59 @@ func buildPricingConfigs(rules []PricingRule) []pricing.FacilityTypePricingConfi
 		configs = append(configs, pricing.FacilityTypePricingConfig{
 			FacilityTypeId: facilityTypeId,
 			PricingRules:   rules,
+		})
+	}
+
+	return configs
+}
+
+// buildBoatLengthPricingConfigs creates boat-length pricing configurations from database
+func buildBoatLengthPricingConfigs(repository FacilityRepository) []pricing.BoatLengthPricingConfig {
+	// Load boat length pricing tiers from database
+	dbTiers := repository.GetBoatLengthPricingTiers()
+
+	// Group tiers by facility type
+	configMap := make(map[int64][]pricing.BoatLengthTier)
+
+	for _, dbTier := range dbTiers {
+		facilityTypeId := dbTier.FacilityTypeId.Value
+
+		// Convert database tier to pricing tier
+		pricingTier := pricing.BoatLengthTier{
+			MinLengthMeters: dbTier.MinLengthMeters,
+			MaxLengthMeters: 0, // Will be set below
+			Price:           dbTier.Price,
+		}
+
+		// Handle max length (nil means infinity)
+		if dbTier.MaxLengthMeters == nil {
+			// Use a very large number to represent infinity for practical purposes
+			pricingTier.MaxLengthMeters = 1e9
+		} else {
+			pricingTier.MaxLengthMeters = *dbTier.MaxLengthMeters
+		}
+
+		configMap[facilityTypeId] = append(configMap[facilityTypeId], pricingTier)
+	}
+
+	// Convert map to slice of configs
+	configs := make([]pricing.BoatLengthPricingConfig, 0, len(configMap))
+	catalog := repository.GetFacilitiesCatalog()
+
+	for facilityTypeId, tiers := range configMap {
+		// Find the facility type to get default price
+		var defaultPrice float64 = 0
+		for _, facilityType := range catalog {
+			if facilityType.Id.Value == facilityTypeId {
+				defaultPrice = facilityType.SuggestedPrice
+				break
+			}
+		}
+
+		configs = append(configs, pricing.BoatLengthPricingConfig{
+			FacilityTypeId: facilityTypeId,
+			Tiers:          tiers,
+			DefaultPrice:   defaultPrice,
 		})
 	}
 
@@ -128,6 +195,52 @@ func (this RentalManagementService) GetSuggestedPriceForMember(
 		baseSuggestedPrice,
 		rentedFacilityTypeIds,
 	)
+}
+
+// GetSuggestedPriceWithBoatLength calculates the suggested price for a facility
+// considering boat length (if applicable) and discounts based on member's existing rentals
+func (this RentalManagementService) GetSuggestedPriceWithBoatLength(
+	facilityTypeId domain.Id[FacilityType],
+	baseSuggestedPrice float64,
+	memberId domain.Id[membership.User],
+	season int64,
+	boatLengthMeters *float64,
+) pricing.PriceCalculationResult {
+	// Get member's currently rented facilities for the season
+	rentedFacilities := this.repository.GetFacilitiesRentedByMember(memberId, season)
+
+	// Extract the facility type IDs as int64
+	rentedFacilityTypeIds := make([]int64, len(rentedFacilities))
+	for i, rentedFacility := range rentedFacilities {
+		facility := rentedFacility.GetFacility()
+		rentedFacilityTypeIds[i] = facility.FacilityType.Id.Value
+	}
+
+	// Create pricing context
+	ctx := pricing.PriceCalculationContext{
+		FacilityTypeId:            facilityTypeId.Value,
+		BaseSuggestedPrice:        baseSuggestedPrice,
+		MemberRentedFacilityTypes: rentedFacilityTypeIds,
+		BoatLengthMeters:          boatLengthMeters,
+	}
+
+	// Calculate price using composite calculator
+	return this.compositePriceCalculator.CalculatePrice(ctx)
+}
+
+// GetBoatLengthTiers returns the pricing tiers for a boat facility
+func (this RentalManagementService) GetBoatLengthTiers(
+	facilityTypeId domain.Id[FacilityType],
+) ([]pricing.BoatLengthTier, bool) {
+	return this.compositePriceCalculator.GetPricingInformation(
+			facilityTypeId.Value,
+			0, // Base price not needed for just getting tiers
+			nil,
+		).BoatLengthTiers, this.compositePriceCalculator.GetPricingInformation(
+			facilityTypeId.Value,
+			0,
+			nil,
+		).HasBoatLengthPricing
 }
 
 // GetApplicableDiscountsForMember returns all pricing rules that apply to a member

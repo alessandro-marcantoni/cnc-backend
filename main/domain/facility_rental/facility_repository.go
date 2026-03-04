@@ -12,6 +12,7 @@ type FacilityRepository interface {
 	GetAvailableFacilities(serviceType FacilityName) []Facility
 	GetFacilitiesRentedByMember(memberId domain.Id[membership.User], season int64) []RentedFacility
 	GetPricingRules() []PricingRule
+	GetBoatLengthPricingTiers() []BoatLengthPricingTier
 	RentFacility(
 		memberId domain.Id[membership.User],
 		facilityId domain.Id[Facility],
@@ -30,4 +31,14 @@ type PricingRule struct {
 	SpecialPrice           float64
 	Description            string
 	Active                 bool
+}
+
+type BoatLengthPricingTier struct {
+	Id              domain.Id[BoatLengthPricingTier]
+	FacilityTypeId  domain.Id[FacilityType]
+	MinLengthMeters float64
+	MaxLengthMeters *float64 // nil means no upper limit (infinity)
+	Price           float64
+	Currency        string
+	Active          bool
 }
