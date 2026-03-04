@@ -99,6 +99,7 @@ func ConvertMemberToPresentation(domainMember membership.Member) Member {
 		MembershipStatus:    string(domainMember.Membership.Status.GetStatus()),
 		MembershipPaid:      domainMember.Membership.Payment.GetStatus() == payment.Paid,
 		HasUnpaidFacilities: domainMember.HasUnpaidFacilities,
+		HasRentedFacilities: domainMember.HasRentedFacilities,
 	}
 }
 

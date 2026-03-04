@@ -117,6 +117,7 @@ func (r *SQLMemberRepository) GetMembersBySeason(seasonId int64) result.Result[[
 			&resultRow.AmountPaid,
 			&resultRow.PaidAt,
 			&resultRow.Currency,
+			&resultRow.HasRentedFacilities,
 			&resultRow.HasUnpaidFacilities,
 		)
 		if err != nil {

@@ -18,6 +18,16 @@ SELECT
         WHEN EXISTS (
             SELECT 1
             FROM rented_facilities rf
+            WHERE rf.member_id = m.id
+            AND rf.season_id = s.id
+            AND rf.deleted_at IS NULL
+        ) THEN true
+        ELSE false
+    END AS has_rented_facilities,
+    CASE
+        WHEN EXISTS (
+            SELECT 1
+            FROM rented_facilities rf
             LEFT JOIN payments fp ON fp.rented_facility_id = rf.id
             WHERE rf.member_id = m.id
             AND rf.season_id = s.id

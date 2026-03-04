@@ -87,6 +87,7 @@ type Member struct {
 	MembershipStatus    string `json:"membershipStatus"`
 	MembershipPaid      bool   `json:"membershipPaid"`
 	HasUnpaidFacilities bool   `json:"hasUnpaidFacilities"`
+	HasRentedFacilities bool   `json:"hasRentedFacilities"`
 }
 
 type MemberSummary struct {

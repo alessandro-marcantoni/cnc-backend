@@ -11,6 +11,7 @@ type Member struct {
 	User
 	Membership          Membership
 	HasUnpaidFacilities bool
+	HasRentedFacilities bool
 }
 
 type MemberDetails struct {

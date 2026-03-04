@@ -316,6 +316,10 @@ func MapToMemberFromQueryBySeason(queryResult GetMembersBySeasonQueryResult) res
 		}
 	}
 
+	// Determine whether the member has any rented facilities using the value
+	// returned by the SQL query (this query now exposes `has_rented_facilities`).
+	hasRentedFacilities := queryResult.HasRentedFacilities
+
 	return result.Ok(membership.Member{
 		User: membership.User{
 			Id:           domain.Id[membership.User]{Value: queryResult.MemberID},
@@ -329,6 +333,13 @@ func MapToMemberFromQueryBySeason(queryResult GetMembersBySeasonQueryResult) res
 		},
 		Membership:          domainMembership,
 		HasUnpaidFacilities: queryResult.HasUnpaidFacilities,
+		// NOTE: the following field is intended to carry whether the member has
+		// any rented facility at all. To fully implement this you will need to:
+		// 1) update the get_members_by_season.sql to select a has_rented_facilities boolean
+		// 2) add `HasRentedFacilities bool` to GetMembersBySeasonQueryResult in data_transfer_objects.go
+		// 3) add the corresponding field to the domain Member struct (membership.Member)
+		// For now we include the field here so later changes are minimal.
+		HasRentedFacilities: hasRentedFacilities,
 	})
 }
 

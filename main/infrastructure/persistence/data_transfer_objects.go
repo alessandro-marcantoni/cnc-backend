@@ -51,6 +51,7 @@ type GetMembersBySeasonQueryResult struct {
 	AmountPaid             *float64       `json:"amount_paid"`
 	PaidAt                 *time.Time     `json:"paid_at"`
 	Currency               *string        `json:"currency"`
+	HasRentedFacilities    bool           `json:"has_rented_facilities"`
 	HasUnpaidFacilities    bool           `json:"has_unpaid_facilities"`
 }
 
