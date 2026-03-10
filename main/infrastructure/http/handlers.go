@@ -16,6 +16,7 @@ import (
 	"github.com/alessandro-marcantoni/cnc-backend/main/infrastructure/persistence"
 	"github.com/alessandro-marcantoni/cnc-backend/main/infrastructure/presentation"
 	infrareports "github.com/alessandro-marcantoni/cnc-backend/main/infrastructure/reports"
+	"github.com/alessandro-marcantoni/cnc-backend/main/shared/errors"
 	"github.com/alessandro-marcantoni/cnc-backend/main/shared/result"
 )
 
@@ -149,6 +150,49 @@ func MemberByIDHandler(w http.ResponseWriter, r *http.Request) {
 
 		member := presentation.ConvertMemberDetailsToPresentation(result.Value())
 		presentation.WriteJSON(w, http.StatusOK, member)
+
+	case http.MethodPut:
+		if memberService == nil {
+			presentation.WriteError(w, http.StatusInternalServerError, "service not initialized")
+			return
+		}
+
+		// Get season from query parameter
+		season := r.URL.Query().Get("season")
+		seasonId, err := strconv.ParseInt(season, 10, 64)
+		if err != nil {
+			presentation.WriteError(w, http.StatusBadRequest, "missing season query parameter")
+			return
+		}
+
+		var req presentation.UpdateMemberRequest
+		if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+			presentation.WriteError(w, http.StatusBadRequest, "invalid JSON: "+err.Error())
+			return
+		}
+
+		// Convert presentation request to domain data
+		user, err := presentation.ConvertUpdateMemberRequestToDomain(req)
+		if err != nil {
+			presentation.WriteError(w, http.StatusBadRequest, err.Error())
+			return
+		}
+
+		// Update the member
+		memberId := domain.Id[membership.Member]{Value: id}
+		result := memberService.UpdateMember(memberId, user, seasonId)
+		if !result.IsSuccess() {
+			if _, ok := result.Error().(errors.NotFoundError); ok {
+				presentation.WriteError(w, http.StatusNotFound, result.Error().Error())
+				return
+			}
+			presentation.WriteError(w, http.StatusInternalServerError, result.Error().Error())
+			return
+		}
+
+		// Convert to presentation and return
+		memberDetails := presentation.ConvertMemberDetailsToPresentation(result.Value())
+		presentation.WriteJSON(w, http.StatusOK, memberDetails)
 
 	default:
 		w.WriteHeader(http.StatusMethodNotAllowed)

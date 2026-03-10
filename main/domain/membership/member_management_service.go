@@ -40,3 +40,7 @@ func (this MemberManagementService) CreateMember(user User, createMembership boo
 func (this MemberManagementService) AddMembership(memberId domain.Id[Member], seasonId int64, price float64) result.Result[MemberDetails] {
 	return this.repository.AddMembership(memberId, seasonId, price)
 }
+
+func (this MemberManagementService) UpdateMember(id domain.Id[Member], user User, season int64) result.Result[MemberDetails] {
+	return this.repository.UpdateMember(id, user, season)
+}

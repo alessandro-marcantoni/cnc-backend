@@ -356,3 +356,56 @@ func ConvertWaitingListToPresentation(waitingList facilityrental.WaitingList) Wa
 		Entries:        entries,
 	}
 }
+
+func ConvertUpdateMemberRequestToDomain(req UpdateMemberRequest) (membership.User, error) {
+	// Parse birth date
+	birthDate, err := parseDate(req.BirthDate)
+	if err != nil {
+		return membership.User{}, fmt.Errorf("invalid birth date: %w", err)
+	}
+
+	// Create email (optional)
+	var email *membership.EmailAddress = nil
+	if req.Email != "" {
+		emailResult := membership.NewEmailAddress(req.Email)
+		if !emailResult.IsSuccess() {
+			return membership.User{}, fmt.Errorf("invalid email: %s", emailResult.Error().Error())
+		}
+		emailVal := emailResult.Value()
+		email = &emailVal
+	}
+
+	// Convert phone numbers
+	phoneNumbers := make([]membership.PhoneNumber, 0, len(req.PhoneNumbers))
+	for _, pn := range req.PhoneNumbers {
+		phoneResult := membership.NewPhoneNumber(pn.Number)
+		if !phoneResult.IsSuccess() {
+			return membership.User{}, fmt.Errorf("invalid phone number: %s", phoneResult.Error().Error())
+		}
+		phoneNumbers = append(phoneNumbers, phoneResult.Value())
+	}
+
+	// Convert addresses
+	addresses := make([]membership.Address, 0, len(req.Addresses))
+	for _, addr := range req.Addresses {
+		addresses = append(addresses, membership.Address{
+			Country: addr.Country,
+			City:    addr.City,
+			ZipCode: addr.ZipCode,
+			Street:  addr.Street,
+			Number:  addr.StreetNumber,
+		})
+	}
+
+	user := membership.User{
+		FirstName:    req.FirstName,
+		LastName:     req.LastName,
+		BirthDate:    birthDate,
+		Email:        email,
+		TaxCode:      req.TaxCode,
+		Addresses:    addresses,
+		PhoneNumbers: phoneNumbers,
+	}
+
+	return user, nil
+}

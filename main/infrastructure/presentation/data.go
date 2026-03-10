@@ -194,3 +194,13 @@ type AddToWaitingListRequest struct {
 	FacilityTypeId int64  `json:"facilityTypeId"`
 	Notes          string `json:"notes,omitempty"`
 }
+
+type UpdateMemberRequest struct {
+	FirstName    string        `json:"firstName"`
+	LastName     string        `json:"lastName"`
+	BirthDate    string        `json:"birthDate"`
+	Email        string        `json:"email"`
+	TaxCode      string        `json:"taxCode,omitempty"`
+	PhoneNumbers []PhoneNumber `json:"phoneNumbers"`
+	Addresses    []Address     `json:"addresses"`
+}

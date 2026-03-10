@@ -38,6 +38,15 @@ var insertMembershipQuery string
 //go:embed queries/insert_membership_period.sql
 var insertMembershipPeriodQuery string
 
+//go:embed queries/update_member.sql
+var updateMemberQuery string
+
+//go:embed queries/delete_phone_numbers.sql
+var deletePhoneNumbersQuery string
+
+//go:embed queries/delete_addresses.sql
+var deleteAddressesQuery string
+
 type SQLMemberRepository struct {
 	db *sql.DB
 }
@@ -341,4 +350,87 @@ func (r *SQLMemberRepository) AddMembership(memberId domain.Id[m.Member], season
 
 	// Fetch and return the updated member details
 	return r.GetMemberById(memberId, seasonId)
+}
+
+func (r *SQLMemberRepository) UpdateMember(id domain.Id[m.Member], user m.User, season int64) result.Result[m.MemberDetails] {
+	ctx := context.Background()
+
+	// Begin transaction
+	tx, err := r.db.BeginTx(ctx, nil)
+	if err != nil {
+		return result.Err[m.MemberDetails](errors.RepositoryError{Description: "failed to begin transaction: " + err.Error()})
+	}
+	defer tx.Rollback()
+
+	// 1. Update member basic info
+	// Convert TaxCode to sql.NullString to handle empty strings as NULL
+	taxCode := sql.NullString{
+		String: user.TaxCode,
+		Valid:  user.TaxCode != "",
+	}
+	// Convert Email to sql.NullString to handle optional email
+	email := sql.NullString{
+		Valid: user.Email != nil,
+	}
+	if user.Email != nil {
+		email.String = user.Email.Value
+	}
+
+	var memberId int64
+	err = tx.QueryRowContext(ctx, updateMemberQuery,
+		user.FirstName,
+		user.LastName,
+		user.BirthDate,
+		email,
+		taxCode,
+		id.Value,
+	).Scan(&memberId)
+	if err != nil {
+		if err == sql.ErrNoRows {
+			return result.Err[m.MemberDetails](errors.NotFoundError{Description: "Member not found"})
+		}
+		return result.Err[m.MemberDetails](errors.RepositoryError{Description: "failed to update member: " + err.Error()})
+	}
+
+	// 2. Delete existing phone numbers
+	_, err = tx.ExecContext(ctx, deletePhoneNumbersQuery, id.Value)
+	if err != nil {
+		return result.Err[m.MemberDetails](errors.RepositoryError{Description: "failed to delete phone numbers: " + err.Error()})
+	}
+
+	// 3. Insert new phone numbers
+	for _, phone := range user.PhoneNumbers {
+		_, err = tx.ExecContext(ctx, insertPhoneNumberQuery, id.Value, phone.Number, nil)
+		if err != nil {
+			return result.Err[m.MemberDetails](errors.RepositoryError{Description: "failed to insert phone number: " + err.Error()})
+		}
+	}
+
+	// 4. Delete existing addresses
+	_, err = tx.ExecContext(ctx, deleteAddressesQuery, id.Value)
+	if err != nil {
+		return result.Err[m.MemberDetails](errors.RepositoryError{Description: "failed to delete addresses: " + err.Error()})
+	}
+
+	// 5. Insert new addresses
+	for _, address := range user.Addresses {
+		_, err = tx.ExecContext(ctx, insertAddressQuery,
+			id.Value,
+			address.Country,
+			address.City,
+			address.Street,
+			address.Number,
+		)
+		if err != nil {
+			return result.Err[m.MemberDetails](errors.RepositoryError{Description: "failed to insert address: " + err.Error()})
+		}
+	}
+
+	// Commit transaction
+	if err = tx.Commit(); err != nil {
+		return result.Err[m.MemberDetails](errors.RepositoryError{Description: "failed to commit transaction: " + err.Error()})
+	}
+
+	// Fetch and return the updated member details
+	return r.GetMemberById(id, season)
 }

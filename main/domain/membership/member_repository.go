@@ -13,4 +13,5 @@ type MemberRepository interface {
 	GetMembersWhoDidNotPayForMembership() []Member
 	CreateMember(user User, createMembership bool, seasonId *int64, price *float64) result.Result[MemberDetails]
 	AddMembership(memberId domain.Id[Member], seasonId int64, price float64) result.Result[MemberDetails]
+	UpdateMember(id domain.Id[Member], user User, season int64) result.Result[MemberDetails]
 }
