@@ -147,6 +147,14 @@ func generatePDFFromHTML(html string, landscape bool) (*bytes.Buffer, error) {
 
 	log.Printf("[PDF] Starting PDF generation (landscape=%v, html_length=%d)", landscape, len(html))
 
+	// Get or create temp directory for Chrome cache
+	tempDir := os.Getenv("TMPDIR")
+	if tempDir == "" {
+		tempDir = "/tmp"
+	}
+	chromeTempDir := tempDir + "/chrome-cache"
+	os.MkdirAll(chromeTempDir, 0755)
+
 	// Create Chrome options for headless operation in restricted environments
 	opts := append(chromedp.DefaultExecAllocatorOptions[:],
 		chromedp.ExecPath(chromePath),
@@ -157,6 +165,13 @@ func generatePDFFromHTML(html string, landscape bool) (*bytes.Buffer, error) {
 		chromedp.Flag("disable-software-rasterizer", true),
 		chromedp.Flag("disable-extensions", true),
 		chromedp.Flag("disable-setuid-sandbox", true),
+		chromedp.Flag("disable-crash-reporter", true),
+		chromedp.Flag("disable-breakpad", true),
+		chromedp.Flag("disable-features", "TranslateUI,BlinkGenPropertyTrees"),
+		chromedp.Flag("hide-scrollbars", true),
+		chromedp.Flag("mute-audio", true),
+		chromedp.Flag("disk-cache-dir", chromeTempDir),
+		chromedp.Flag("disk-cache-size", "1"),
 	)
 
 	// Create allocator context with options

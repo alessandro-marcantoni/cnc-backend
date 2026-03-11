@@ -41,8 +41,15 @@ COPY --from=builder /app/db /app/db
 
 EXPOSE 8080
 
-# Create non-root user
-RUN useradd -r -u 1000 -g root appuser
+# Create non-root user and temp directory for Chrome
+RUN useradd -r -u 1000 -g root appuser && \
+    mkdir -p /tmp/chrome && \
+    chown -R appuser:root /tmp/chrome && \
+    chmod -R 775 /tmp/chrome
+
+# Set Chrome temp directory and disable crash handler
+ENV TMPDIR=/tmp/chrome
+ENV XDG_RUNTIME_DIR=/tmp/chrome
 
 USER appuser
 
