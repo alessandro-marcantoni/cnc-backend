@@ -6,7 +6,9 @@ import (
 	_ "embed"
 	"fmt"
 	"html/template"
+	"log"
 	"os"
+	"os/exec"
 	"time"
 
 	"github.com/alessandro-marcantoni/cnc-backend/main/domain/reports"
@@ -125,6 +127,26 @@ func generatePDFFromHTML(html string, landscape bool) (*bytes.Buffer, error) {
 		chromePath = "/usr/bin/chromium" // Default fallback
 	}
 
+	// Log Chrome path for debugging
+	log.Printf("[PDF] Using Chrome binary at: %s", chromePath)
+
+	// Check if Chrome binary exists and is executable
+	if _, err := os.Stat(chromePath); os.IsNotExist(err) {
+		log.Printf("[PDF] ERROR: Chrome binary not found at %s", chromePath)
+		return nil, fmt.Errorf("chrome binary not found at %s: %w", chromePath, err)
+	}
+
+	// Try to get Chrome version for diagnostics
+	if cmd := exec.Command(chromePath, "--version"); cmd != nil {
+		if output, err := cmd.Output(); err == nil {
+			log.Printf("[PDF] Chrome version: %s", string(output))
+		} else {
+			log.Printf("[PDF] WARNING: Could not get Chrome version: %v", err)
+		}
+	}
+
+	log.Printf("[PDF] Starting PDF generation (landscape=%v, html_length=%d)", landscape, len(html))
+
 	// Create Chrome options for headless operation in restricted environments
 	opts := append(chromedp.DefaultExecAllocatorOptions[:],
 		chromedp.ExecPath(chromePath),
@@ -145,8 +167,16 @@ func generatePDFFromHTML(html string, landscape bool) (*bytes.Buffer, error) {
 	ctx, cancel := chromedp.NewContext(allocCtx)
 	defer cancel()
 
-	// Set timeout
-	ctx, cancel = context.WithTimeout(ctx, 30*time.Second)
+	// Set timeout - increase to 60 seconds for production environments
+	timeoutDuration := 60 * time.Second
+	if timeoutEnv := os.Getenv("PDF_TIMEOUT_SECONDS"); timeoutEnv != "" {
+		if parsedTimeout, err := time.ParseDuration(timeoutEnv + "s"); err == nil {
+			timeoutDuration = parsedTimeout
+		}
+	}
+	log.Printf("[PDF] Using timeout: %v", timeoutDuration)
+
+	ctx, cancel = context.WithTimeout(ctx, timeoutDuration)
 	defer cancel()
 
 	var pdfData []byte
@@ -165,25 +195,53 @@ func generatePDFFromHTML(html string, landscape bool) (*bytes.Buffer, error) {
 	}
 
 	// Navigate to data URL and print to PDF
+	log.Printf("[PDF] Starting chromedp navigation and rendering")
+
 	err := chromedp.Run(ctx,
 		chromedp.Navigate("about:blank"),
 		chromedp.ActionFunc(func(ctx context.Context) error {
+			log.Printf("[PDF] Setting document content")
 			frameTree, err := page.GetFrameTree().Do(ctx)
 			if err != nil {
+				log.Printf("[PDF] ERROR: Failed to get frame tree: %v", err)
 				return err
 			}
 			return page.SetDocumentContent(frameTree.Frame.ID, html).Do(ctx)
 		}),
 		chromedp.ActionFunc(func(ctx context.Context) error {
+			log.Printf("[PDF] Printing to PDF")
 			var err error
 			pdfData, _, err = printParams.Do(ctx)
+			if err != nil {
+				log.Printf("[PDF] ERROR: Failed to print PDF: %v", err)
+			} else {
+				log.Printf("[PDF] Successfully generated PDF (size: %d bytes)", len(pdfData))
+			}
 			return err
 		}),
 	)
 
 	if err != nil {
+		log.Printf("[PDF] FINAL ERROR: %v", err)
+		// Add more context about the environment
+		log.Printf("[PDF] Environment debug info:")
+		log.Printf("[PDF]   - Chrome path: %s", chromePath)
+		log.Printf("[PDF]   - Working directory: %s", func() string { wd, _ := os.Getwd(); return wd }())
+		log.Printf("[PDF]   - User: %s", os.Getenv("USER"))
+		log.Printf("[PDF]   - Available memory: checking /proc/meminfo")
+		if memInfo, err := os.ReadFile("/proc/meminfo"); err == nil {
+			log.Printf("[PDF]   - Memory info (first 500 chars): %s", string(memInfo[:min(500, len(memInfo))]))
+		}
 		return nil, fmt.Errorf("chromedp error: %w", err)
 	}
 
+	log.Printf("[PDF] PDF generation completed successfully")
 	return bytes.NewBuffer(pdfData), nil
+}
+
+func min(a, b int) int {
+	if a < b {
+		return a
+	}
+	return b
 }
