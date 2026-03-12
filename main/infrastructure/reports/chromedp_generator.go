@@ -156,23 +156,47 @@ func generatePDFFromHTML(html string, landscape bool) (*bytes.Buffer, error) {
 	os.MkdirAll(chromeTempDir, 0755)
 
 	// Create Chrome options for headless operation in restricted environments
-	opts := append(chromedp.DefaultExecAllocatorOptions[:],
+	// Use a completely custom set of options instead of DefaultExecAllocatorOptions
+	opts := []chromedp.ExecAllocatorOption{
 		chromedp.ExecPath(chromePath),
-		chromedp.Flag("headless", true),
-		chromedp.Flag("disable-gpu", true),
-		chromedp.Flag("no-sandbox", true),
-		chromedp.Flag("disable-dev-shm-usage", true),
-		chromedp.Flag("disable-software-rasterizer", true),
-		chromedp.Flag("disable-extensions", true),
-		chromedp.Flag("disable-setuid-sandbox", true),
+		chromedp.NoFirstRun,
+		chromedp.NoDefaultBrowserCheck,
+		chromedp.Headless,
+
+		// Disable crash handler and breakpad completely
 		chromedp.Flag("disable-crash-reporter", true),
 		chromedp.Flag("disable-breakpad", true),
-		chromedp.Flag("disable-features", "TranslateUI,BlinkGenPropertyTrees"),
+		chromedp.Flag("enable-crash-reporter", false),
+		chromedp.Flag("crash-dumps-dir", "/dev/null"),
+
+		// Security and sandbox flags
+		chromedp.Flag("no-sandbox", true),
+		chromedp.Flag("disable-setuid-sandbox", true),
+		chromedp.Flag("disable-dev-shm-usage", true),
+
+		// GPU and rendering flags
+		chromedp.Flag("disable-gpu", true),
+		chromedp.Flag("disable-software-rasterizer", true),
+		chromedp.Flag("disable-gpu-compositing", true),
+
+		// Other optimizations
+		chromedp.Flag("disable-extensions", true),
+		chromedp.Flag("disable-background-networking", true),
+		chromedp.Flag("disable-sync", true),
+		chromedp.Flag("disable-translate", true),
+		chromedp.Flag("disable-default-apps", true),
+		chromedp.Flag("disable-features", "TranslateUI,BlinkGenPropertyTrees,site-per-process"),
 		chromedp.Flag("hide-scrollbars", true),
 		chromedp.Flag("mute-audio", true),
 		chromedp.Flag("disk-cache-dir", chromeTempDir),
 		chromedp.Flag("disk-cache-size", "1"),
-	)
+		chromedp.Flag("single-process", true),
+		chromedp.Flag("no-zygote", true),
+		chromedp.Flag("disable-background-timer-throttling", true),
+		chromedp.Flag("disable-renderer-backgrounding", true),
+		chromedp.Flag("disable-backgrounding-occluded-windows", true),
+		chromedp.Flag("disable-ipc-flooding-protection", true),
+	}
 
 	// Create allocator context with options
 	allocCtx, allocCancel := chromedp.NewExecAllocator(context.Background(), opts...)
