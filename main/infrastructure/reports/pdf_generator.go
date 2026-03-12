@@ -28,7 +28,7 @@ func NewWkhtmltopdfGenerator() *WkhtmltopdfGenerator {
 	// Get wkhtmltopdf path from environment or use default
 	wkhtmlPath := os.Getenv("WKHTMLTOPDF_PATH")
 	if wkhtmlPath == "" {
-		wkhtmlPath = "/usr/bin/wkhtmltopdf"
+		wkhtmlPath = "/usr/local/bin/wkhtmltopdf"
 	}
 
 	return &WkhtmltopdfGenerator{
