@@ -63,11 +63,20 @@
                 border-left: 3px solid #2980b9;
             }
 
-            .info-grid {
-                display: grid;
-                grid-template-columns: 1fr 1fr;
-                gap: 7px;
+            .info-table {
+                width: 100%;
+                border-collapse: collapse;
                 margin-bottom: 7px;
+            }
+
+            .info-table td {
+                width: 50%;
+                padding: 3px;
+                vertical-align: top;
+            }
+
+            .info-table td.full-width {
+                width: 100%;
             }
 
             .info-item {
@@ -75,10 +84,7 @@
                 padding: 9px 11px;
                 border-radius: 2px;
                 border: 1px solid #e9ecef;
-            }
-
-            .info-item.full-width {
-                grid-column: 1 / -1;
+                height: 100%;
             }
 
             .info-label {
@@ -96,19 +102,19 @@
                 font-weight: 500;
             }
 
-            table {
+            table.data-table {
                 width: 100%;
                 border-collapse: collapse;
                 margin-top: 7px;
                 font-size: 11px;
             }
 
-            table thead {
+            table.data-table thead {
                 background: #3498db;
                 color: white;
             }
 
-            table th {
+            table.data-table th {
                 padding: 7px 8px;
                 text-align: left;
                 font-weight: bold;
@@ -117,16 +123,16 @@
                 letter-spacing: 0.3px;
             }
 
-            table td {
+            table.data-table td {
                 padding: 6px 8px;
                 border-bottom: 1px solid #e9ecef;
             }
 
-            table tbody tr:nth-child(even) {
+            table.data-table tbody tr:nth-child(even) {
                 background: #f8f9fa;
             }
 
-            table tbody tr:hover {
+            table.data-table tbody tr:hover {
                 background: #e3f2fd;
             }
 
@@ -167,15 +173,16 @@
                 border-top: 1px solid #ecf0f1;
             }
 
-            .signature-grid {
-                display: grid;
-                grid-template-columns: 1fr 1fr;
-                gap: 30px;
+            .signature-table {
+                width: 100%;
+                border-collapse: collapse;
                 margin-top: 20px;
             }
 
-            .signature-field {
+            .signature-table td {
+                width: 50%;
                 text-align: center;
+                padding: 0 15px;
             }
 
             .signature-label {
@@ -189,6 +196,7 @@
                 border-bottom: 1px solid #2c3e50;
                 height: 38px;
                 margin-bottom: 5px;
+                margin-top: 7px;
             }
 
             .text-center {
@@ -217,48 +225,68 @@
 
         <div class="section">
             <div class="section-title">Informazioni Personali</div>
-            <div class="info-grid">
-                <div class="info-item">
-                    <div class="info-label">Nome</div>
-                    <div class="info-value">{{.Member.FirstName}}</div>
-                </div>
-                <div class="info-item">
-                    <div class="info-label">Cognome</div>
-                    <div class="info-value">{{.Member.LastName}}</div>
-                </div>
-                <div class="info-item">
-                    <div class="info-label">Email</div>
-                    <div class="info-value">{{.Member.Email}}</div>
-                </div>
-                <div class="info-item">
-                    <div class="info-label">Data di Nascita</div>
-                    <div class="info-value">{{.Member.BirthDate}}</div>
-                </div>
+            <table class="info-table">
+                <tr>
+                    <td>
+                        <div class="info-item">
+                            <div class="info-label">Nome</div>
+                            <div class="info-value">{{.Member.FirstName}}</div>
+                        </div>
+                    </td>
+                    <td>
+                        <div class="info-item">
+                            <div class="info-label">Cognome</div>
+                            <div class="info-value">{{.Member.LastName}}</div>
+                        </div>
+                    </td>
+                </tr>
+                <tr>
+                    <td>
+                        <div class="info-item">
+                            <div class="info-label">Email</div>
+                            <div class="info-value">{{.Member.Email}}</div>
+                        </div>
+                    </td>
+                    <td>
+                        <div class="info-item">
+                            <div class="info-label">Data di Nascita</div>
+                            <div class="info-value">{{.Member.BirthDate}}</div>
+                        </div>
+                    </td>
+                </tr>
                 {{if .Member.PhoneNumbers}}
-                <div class="info-item full-width">
-                    <div class="info-label">Telefono</div>
-                    <div class="info-value">
-                        {{range $index, $phone := .Member.PhoneNumbers}} {{if
-                        $index}}, {{end}}{{$phone.Number}} {{end}}
-                    </div>
-                </div>
+                <tr>
+                    <td colspan="2" class="full-width">
+                        <div class="info-item">
+                            <div class="info-label">Telefono</div>
+                            <div class="info-value">
+                                {{range $index, $phone := .Member.PhoneNumbers}}
+                                {{if $index}}, {{end}}{{$phone.Number}} {{end}}
+                            </div>
+                        </div>
+                    </td>
+                </tr>
                 {{end}} {{if .Member.Addresses}}
-                <div class="info-item full-width">
-                    <div class="info-label">Indirizzo</div>
-                    <div class="info-value">
-                        {{with index .Member.Addresses 0}} {{.Street}}
-                        {{.StreetNumber}}, {{.ZipCode}} {{.City}}, {{.Country}}
-                        {{end}}
-                    </div>
-                </div>
+                <tr>
+                    <td colspan="2" class="full-width">
+                        <div class="info-item">
+                            <div class="info-label">Indirizzo</div>
+                            <div class="info-value">
+                                {{with index .Member.Addresses 0}} {{.Street}}
+                                {{.StreetNumber}}, {{.ZipCode}} {{.City}},
+                                {{.Country}} {{end}}
+                            </div>
+                        </div>
+                    </td>
+                </tr>
                 {{end}}
-            </div>
+            </table>
         </div>
 
         {{if .Member.Memberships}}
         <div class="section">
             <div class="section-title">Tessere Associative</div>
-            <table>
+            <table class="data-table">
                 <thead>
                     <tr>
                         <th>Numero</th>
@@ -294,7 +322,7 @@
                 Servizi Affittati - Stagione {{.SeasonCode}}
             </div>
             {{if .Facilities}}
-            <table>
+            <table class="data-table">
                 <thead>
                     <tr>
                         <th>ID</th>
@@ -335,16 +363,18 @@
         </div>
 
         <div class="signature-section">
-            <div class="signature-grid">
-                <div class="signature-field">
-                    <div class="signature-label">Data</div>
-                    <div class="signature-line"></div>
-                </div>
-                <div class="signature-field">
-                    <div class="signature-label">Firma</div>
-                    <div class="signature-line"></div>
-                </div>
-            </div>
+            <table class="signature-table">
+                <tr>
+                    <td>
+                        <div class="signature-label">Data</div>
+                        <div class="signature-line"></div>
+                    </td>
+                    <td>
+                        <div class="signature-label">Firma</div>
+                        <div class="signature-line"></div>
+                    </td>
+                </tr>
+            </table>
         </div>
     </body>
 </html>

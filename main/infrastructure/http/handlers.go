@@ -40,7 +40,7 @@ func InitializeServices(database *sql.DB) {
 	paymentService = payment.NewPaymentManagementService(paymentRepo)
 	waitingListService = facilityrental.NewWaitingListManagementService(waitingListRepo)
 	seasonRepo = persistence.NewSQLSeasonRepository(database)
-	pdfGenerator := infrareports.NewChromeDPPDFGenerator()
+	pdfGenerator := infrareports.NewWkhtmltopdfGenerator()
 	reportService = reports.NewReportService(pdfGenerator)
 }
 

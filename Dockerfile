@@ -1,5 +1,5 @@
-# -------- Build stage --------
-FROM golang:1.25.5-alpine AS builder
+# ---------- Build stage ----------
+FROM --platform=$BUILDPLATFORM golang:1.25.5-alpine AS builder
 
 WORKDIR /app
 
@@ -10,55 +10,37 @@ RUN go mod download
 
 COPY . .
 
-RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 \
+ARG TARGETOS
+ARG TARGETARCH
+
+RUN CGO_ENABLED=0 GOOS=$TARGETOS GOARCH=$TARGETARCH \
     go build -ldflags="-s -w" -o app main/main.go
 
-# -------- Runtime stage --------
+
+# ---------- Runtime stage ----------
 FROM debian:12-slim
 
 WORKDIR /app
 
-# Install Chromium for PDF generation
-RUN apt-get update && \
-    apt-get install -y \
-    chromium \
-    chromium-sandbox \
+# Install wkhtmltopdf and fonts
+RUN apt-get update && apt-get install -y \
+    wkhtmltopdf \
     fonts-liberation \
-    libnss3 \
-    libatk-bridge2.0-0 \
-    libdrm2 \
-    libxkbcommon0 \
-    libgbm1 \
-    libasound2 \
-    libx11-6 \
-    libx11-xcb1 \
-    libxcb1 \
-    libxcomposite1 \
-    libxdamage1 \
-    libxrandr2 \
-    libgtk-3-0 \
+    fonts-dejavu-core \
+    fonts-noto \
+    fonts-noto-cjk \
     ca-certificates \
     && rm -rf /var/lib/apt/lists/*
 
-# Set Chrome path environment variable
-ENV CHROME_BIN=/usr/bin/chromium
-
+# Copy application
 COPY --from=builder /app/app /app/app
 COPY --from=builder /app/db /app/db
 
-EXPOSE 8080
-
-# Create non-root user and Chrome directories with proper permissions
-RUN useradd -r -u 1000 -g root appuser && \
-    mkdir -p /tmp/chrome /tmp/chrome-data && \
-    chown -R appuser:root /tmp/chrome /tmp/chrome-data && \
-    chmod -R 775 /tmp/chrome /tmp/chrome-data
-
-# Set Chrome environment variables for container runtime
-ENV TMPDIR=/tmp/chrome
-ENV XDG_RUNTIME_DIR=/tmp/chrome
-ENV CHROME_USER_DATA_DIR=/tmp/chrome-data
+# Create non-root user
+RUN useradd -r -u 1000 -g root appuser
 
 USER appuser
+
+EXPOSE 8080
 
 ENTRYPOINT ["/app/app"]
