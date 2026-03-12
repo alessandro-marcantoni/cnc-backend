@@ -147,56 +147,33 @@ func generatePDFFromHTML(html string, landscape bool) (*bytes.Buffer, error) {
 
 	log.Printf("[PDF] Starting PDF generation (landscape=%v, html_length=%d)", landscape, len(html))
 
-	// Get or create temp directory for Chrome cache
-	tempDir := os.Getenv("TMPDIR")
-	if tempDir == "" {
-		tempDir = "/tmp"
+	// Get Chrome user data directory from environment or create default
+	userDataDir := os.Getenv("CHROME_USER_DATA_DIR")
+	if userDataDir == "" {
+		userDataDir = "/tmp/chrome-data"
 	}
-	chromeTempDir := tempDir + "/chrome-cache"
-	os.MkdirAll(chromeTempDir, 0755)
 
-	// Create Chrome options for headless operation in restricted environments
-	// Use a completely custom set of options instead of DefaultExecAllocatorOptions
-	opts := []chromedp.ExecAllocatorOption{
+	// Create Chrome options for headless operation in containers
+	// Start with DefaultExecAllocatorOptions and add container-specific flags
+	opts := append(chromedp.DefaultExecAllocatorOptions[:],
 		chromedp.ExecPath(chromePath),
-		chromedp.NoFirstRun,
-		chromedp.NoDefaultBrowserCheck,
-		chromedp.Headless,
+		chromedp.Flag("headless", "new"),
 
-		// Disable crash handler and breakpad completely
-		chromedp.Flag("disable-crash-reporter", true),
-		chromedp.Flag("disable-breakpad", true),
-		chromedp.Flag("enable-crash-reporter", false),
-		chromedp.Flag("crash-dumps-dir", "/dev/null"),
-
-		// Security and sandbox flags
+		// Critical container flags - without these Chrome crashes
 		chromedp.Flag("no-sandbox", true),
 		chromedp.Flag("disable-setuid-sandbox", true),
 		chromedp.Flag("disable-dev-shm-usage", true),
+		chromedp.Flag("disable-crash-reporter", true),
 
-		// GPU and rendering flags
+		// Set user data directory explicitly (important for non-root users)
+		chromedp.Flag("user-data-dir", userDataDir),
+
+		// Additional stability flags for containers
 		chromedp.Flag("disable-gpu", true),
 		chromedp.Flag("disable-software-rasterizer", true),
-		chromedp.Flag("disable-gpu-compositing", true),
-
-		// Other optimizations
 		chromedp.Flag("disable-extensions", true),
-		chromedp.Flag("disable-background-networking", true),
-		chromedp.Flag("disable-sync", true),
-		chromedp.Flag("disable-translate", true),
-		chromedp.Flag("disable-default-apps", true),
-		chromedp.Flag("disable-features", "TranslateUI,BlinkGenPropertyTrees,site-per-process"),
 		chromedp.Flag("hide-scrollbars", true),
-		chromedp.Flag("mute-audio", true),
-		chromedp.Flag("disk-cache-dir", chromeTempDir),
-		chromedp.Flag("disk-cache-size", "1"),
-		chromedp.Flag("single-process", true),
-		chromedp.Flag("no-zygote", true),
-		chromedp.Flag("disable-background-timer-throttling", true),
-		chromedp.Flag("disable-renderer-backgrounding", true),
-		chromedp.Flag("disable-backgrounding-occluded-windows", true),
-		chromedp.Flag("disable-ipc-flooding-protection", true),
-	}
+	)
 
 	// Create allocator context with options
 	allocCtx, allocCancel := chromedp.NewExecAllocator(context.Background(), opts...)

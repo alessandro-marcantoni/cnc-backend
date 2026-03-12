@@ -30,6 +30,13 @@ RUN apt-get update && \
     libxkbcommon0 \
     libgbm1 \
     libasound2 \
+    libx11-6 \
+    libx11-xcb1 \
+    libxcb1 \
+    libxcomposite1 \
+    libxdamage1 \
+    libxrandr2 \
+    libgtk-3-0 \
     ca-certificates \
     && rm -rf /var/lib/apt/lists/*
 
@@ -41,15 +48,16 @@ COPY --from=builder /app/db /app/db
 
 EXPOSE 8080
 
-# Create non-root user and temp directory for Chrome
+# Create non-root user and Chrome directories with proper permissions
 RUN useradd -r -u 1000 -g root appuser && \
-    mkdir -p /tmp/chrome && \
-    chown -R appuser:root /tmp/chrome && \
-    chmod -R 775 /tmp/chrome
+    mkdir -p /tmp/chrome /tmp/chrome-data && \
+    chown -R appuser:root /tmp/chrome /tmp/chrome-data && \
+    chmod -R 775 /tmp/chrome /tmp/chrome-data
 
-# Set Chrome temp directory and disable crash handler
+# Set Chrome environment variables for container runtime
 ENV TMPDIR=/tmp/chrome
 ENV XDG_RUNTIME_DIR=/tmp/chrome
+ENV CHROME_USER_DATA_DIR=/tmp/chrome-data
 
 USER appuser
 
