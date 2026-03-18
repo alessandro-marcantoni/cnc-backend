@@ -60,6 +60,7 @@ type GetRentedFacilitiesByMemberQueryResult struct {
 	RentedAt           time.Time  `json:"rented_at"`
 	ExpiresAt          time.Time  `json:"expires_at"`
 	Price              float64    `json:"price"`
+	DiscountApplied    bool       `json:"discount_applied"`
 	FacilityID         int64      `json:"facility_id"`
 	FacilityIdentifier string     `json:"facility_identifier"`
 	FacilityTypeID     int64      `json:"facility_type_id"`

@@ -22,6 +22,9 @@ var getFacilitiesCatalogQuery string
 //go:embed queries/get_facilities_by_type.sql
 var getFacilitiesByTypeQuery string
 
+//go:embed queries/get_facility_by_id.sql
+var getFacilityByIdQuery string
+
 //go:embed queries/insert_rented_facility.sql
 var insertRentedFacilityQuery string
 
@@ -165,6 +168,74 @@ func (r *SQLFacilityRepository) GetFacilitiesByType(facilityTypeId domain.Id[fac
 	return facilities
 }
 
+func (r *SQLFacilityRepository) GetFacilityById(facilityId domain.Id[facilityrental.Facility]) (facilityrental.FacilityWithStatus, bool) {
+	var id int64
+	var facilityTypeId int64
+	var identifier string
+	var facilityTypeName string
+	var facilityTypeDescription sql.NullString
+	var suggestedPrice float64
+	var isRented bool
+	var expiresAt sql.NullTime
+	var rentedByMemberId sql.NullInt64
+	var rentedByMemberFirstName sql.NullString
+	var rentedByMemberLastName sql.NullString
+
+	err := r.db.QueryRow(getFacilityByIdQuery, facilityId.Value).Scan(
+		&id,
+		&facilityTypeId,
+		&identifier,
+		&facilityTypeName,
+		&facilityTypeDescription,
+		&suggestedPrice,
+		&isRented,
+		&expiresAt,
+		&rentedByMemberId,
+		&rentedByMemberFirstName,
+		&rentedByMemberLastName,
+	)
+
+	if err != nil {
+		return facilityrental.FacilityWithStatus{}, false
+	}
+
+	var expiresAtPtr *time.Time
+	if expiresAt.Valid {
+		expiresAtPtr = &expiresAt.Time
+	}
+
+	var memberIdPtr *int64
+	if rentedByMemberId.Valid {
+		memberIdPtr = &rentedByMemberId.Int64
+	}
+
+	var firstNamePtr *string
+	if rentedByMemberFirstName.Valid {
+		firstNamePtr = &rentedByMemberFirstName.String
+	}
+
+	var lastNamePtr *string
+	if rentedByMemberLastName.Valid {
+		lastNamePtr = &rentedByMemberLastName.String
+	}
+
+	facility := facilityrental.FacilityWithStatus{
+		Id:                      domain.Id[facilityrental.Facility]{Value: id},
+		FacilityTypeId:          domain.Id[facilityrental.FacilityType]{Value: facilityTypeId},
+		Identifier:              identifier,
+		FacilityTypeName:        facilityrental.ToFacilityName(facilityTypeName),
+		FacilityTypeDescription: facilityTypeDescription.String,
+		SuggestedPrice:          suggestedPrice,
+		IsRented:                isRented,
+		ExpiresAt:               expiresAtPtr,
+		RentedByMemberId:        memberIdPtr,
+		RentedByMemberFirstName: firstNamePtr,
+		RentedByMemberLastName:  lastNamePtr,
+	}
+
+	return facility, true
+}
+
 func (r *SQLFacilityRepository) GetAvailableFacilities(serviceType facilityrental.FacilityName) []facilityrental.Facility {
 	// TODO: Implement this method
 	return []facilityrental.Facility{}
@@ -186,6 +257,7 @@ func (r *SQLFacilityRepository) GetFacilitiesRentedByMember(memberId domain.Id[m
 			&dto.RentedAt,
 			&dto.ExpiresAt,
 			&dto.Price,
+			&dto.DiscountApplied,
 			&dto.FacilityID,
 			&dto.FacilityIdentifier,
 			&dto.FacilityTypeID,
@@ -228,6 +300,7 @@ func (r *SQLFacilityRepository) RentFacility(
 	facilityId domain.Id[facilityrental.Facility],
 	season int64,
 	price float64,
+	discountApplied bool,
 	boatInfo *facilityrental.BoatInfo,
 	leerboardInfo *facilityrental.LeerboardInfo,
 ) result.Result[facilityrental.RentedFacility] {
@@ -247,6 +320,7 @@ func (r *SQLFacilityRepository) RentFacility(
 		memberId.Value,
 		season,
 		price,
+		discountApplied,
 	).Scan(&rentedFacilityId)
 	if err != nil {
 		return result.Err[facilityrental.RentedFacility](errors.RepositoryError{Description: "failed to insert facility rental: " + err.Error()})

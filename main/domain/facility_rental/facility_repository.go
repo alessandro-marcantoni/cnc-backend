@@ -9,6 +9,7 @@ import (
 type FacilityRepository interface {
 	GetFacilitiesCatalog() []FacilityType
 	GetFacilitiesByType(facilityTypeId domain.Id[FacilityType], seasonId int64) []FacilityWithStatus
+	GetFacilityById(facilityId domain.Id[Facility]) (FacilityWithStatus, bool)
 	GetAvailableFacilities(serviceType FacilityName) []Facility
 	GetFacilitiesRentedByMember(memberId domain.Id[membership.User], season int64) []RentedFacility
 	GetPricingRules() []PricingRule
@@ -18,6 +19,7 @@ type FacilityRepository interface {
 		facilityId domain.Id[Facility],
 		season int64,
 		price float64,
+		discountApplied bool,
 		boatInfo *BoatInfo,
 		leerboardInfo *LeerboardInfo,
 	) result.Result[RentedFacility]

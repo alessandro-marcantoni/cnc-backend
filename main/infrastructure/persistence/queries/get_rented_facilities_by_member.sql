@@ -3,6 +3,7 @@ SELECT
     s.starts_at           AS rented_at,
     s.ends_at             AS expires_at,
     rf.price,
+    rf.discount_applied,
 
     f.id                  AS facility_id,
     f.identifier          AS facility_identifier,

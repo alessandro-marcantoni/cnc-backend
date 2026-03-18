@@ -330,12 +330,37 @@ func RentedFacilitiesHandler(w http.ResponseWriter, r *http.Request) {
 			}
 		}
 
+		// Fetch the facility to get its type and base price
+		facility, found := facilityRepo.GetFacilityById(facilityId)
+		if !found {
+			presentation.WriteError(w, http.StatusNotFound, "facility not found")
+			return
+		}
+
+		// Calculate suggested price to determine if discount should be applied
+		var boatLength *float64
+		if boatInfo != nil {
+			boatLength = &boatInfo.LengthMeters
+		}
+
+		priceResult := rentalService.GetSuggestedPriceWithBoatLength(
+			facility.FacilityTypeId,
+			facility.SuggestedPrice,
+			memberId,
+			req.SeasonId,
+			boatLength,
+		)
+
+		// Determine if discount was applied based on price calculation
+		discountApplied := priceResult.DiscountApplied
+
 		// Rent facility
 		result := rentalService.RentService(
 			facilityId,
 			memberId,
 			req.SeasonId,
 			req.Price,
+			discountApplied,
 			boatInfo,
 			leerboardInfo,
 		)

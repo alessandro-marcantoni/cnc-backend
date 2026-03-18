@@ -16,6 +16,7 @@ type RentedFacility interface {
 	GetPayment() payment.Payment
 	GetType() RentedFacilityType
 	GetPrice() float64
+	GetDiscountApplied() bool
 }
 
 type RentedFacilityType string
@@ -27,32 +28,35 @@ const (
 )
 
 type SimpleRentedFacility struct {
-	Id       domain.Id[RentedFacility]
-	MemberId domain.Id[membership.Member]
-	Facility Facility
-	Validity RentalValidity
-	Price    float64
-	Payment  payment.Payment
+	Id              domain.Id[RentedFacility]
+	MemberId        domain.Id[membership.Member]
+	Facility        Facility
+	Validity        RentalValidity
+	Price           float64
+	Payment         payment.Payment
+	DiscountApplied bool
 }
 
 type RentedFacilityWithBoat struct {
-	Id       domain.Id[RentedFacility]
-	MemberId domain.Id[membership.Member]
-	Facility Facility
-	Validity RentalValidity
-	Price    float64
-	Payment  payment.Payment
-	BoatInfo BoatInfo
+	Id              domain.Id[RentedFacility]
+	MemberId        domain.Id[membership.Member]
+	Facility        Facility
+	Validity        RentalValidity
+	Price           float64
+	Payment         payment.Payment
+	BoatInfo        BoatInfo
+	DiscountApplied bool
 }
 
 type RentedFacilityWithLeerboard struct {
-	Id            domain.Id[RentedFacility]
-	MemberId      domain.Id[membership.Member]
-	Facility      Facility
-	Validity      RentalValidity
-	Price         float64
-	Payment       payment.Payment
-	LeerboardInfo LeerboardInfo
+	Id              domain.Id[RentedFacility]
+	MemberId        domain.Id[membership.Member]
+	Facility        Facility
+	Validity        RentalValidity
+	Price           float64
+	Payment         payment.Payment
+	LeerboardInfo   LeerboardInfo
+	DiscountApplied bool
 }
 
 type RentalValidity struct {
@@ -88,6 +92,10 @@ func (s SimpleRentedFacility) GetType() RentedFacilityType {
 	return SimpleFacility
 }
 
+func (s SimpleRentedFacility) GetDiscountApplied() bool {
+	return s.DiscountApplied
+}
+
 func (r RentedFacilityWithBoat) GetId() domain.Id[RentedFacility] {
 	return r.Id
 }
@@ -116,6 +124,10 @@ func (r RentedFacilityWithBoat) GetType() RentedFacilityType {
 	return BoatFacility
 }
 
+func (r RentedFacilityWithBoat) GetDiscountApplied() bool {
+	return r.DiscountApplied
+}
+
 func (r RentedFacilityWithLeerboard) GetId() domain.Id[RentedFacility] {
 	return r.Id
 }
@@ -142,4 +154,8 @@ func (r RentedFacilityWithLeerboard) GetPayment() payment.Payment {
 
 func (r RentedFacilityWithLeerboard) GetType() RentedFacilityType {
 	return LeerboardFacility
+}
+
+func (r RentedFacilityWithLeerboard) GetDiscountApplied() bool {
+	return r.DiscountApplied
 }

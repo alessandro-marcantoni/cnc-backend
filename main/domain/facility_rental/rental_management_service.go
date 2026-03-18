@@ -131,11 +131,12 @@ func (this RentalManagementService) RentService(
 	memberId domain.Id[membership.User],
 	season int64,
 	price float64,
+	discountApplied bool,
 	boat *BoatInfo,
 	leerboard *LeerboardInfo,
 ) result.Result[RentedFacility] {
 	// Rent the facility
-	rentResult := this.repository.RentFacility(memberId, facilityId, season, price, boat, leerboard)
+	rentResult := this.repository.RentFacility(memberId, facilityId, season, price, discountApplied, boat, leerboard)
 	if !rentResult.IsSuccess() {
 		return rentResult
 	}
@@ -210,10 +211,17 @@ func (this RentalManagementService) GetSuggestedPriceWithBoatLength(
 	rentedFacilities := this.repository.GetFacilitiesRentedByMember(memberId, season)
 
 	// Extract the facility type IDs as int64
+	// Also check if member already has a rental with discount applied
 	rentedFacilityTypeIds := make([]int64, len(rentedFacilities))
+	memberHasDiscountedRental := false
 	for i, rentedFacility := range rentedFacilities {
 		facility := rentedFacility.GetFacility()
 		rentedFacilityTypeIds[i] = facility.FacilityType.Id.Value
+
+		// Check if any existing rental has discount applied
+		if rentedFacility.GetDiscountApplied() {
+			memberHasDiscountedRental = true
+		}
 	}
 
 	// Create pricing context
@@ -221,6 +229,7 @@ func (this RentalManagementService) GetSuggestedPriceWithBoatLength(
 		FacilityTypeId:            facilityTypeId.Value,
 		BaseSuggestedPrice:        baseSuggestedPrice,
 		MemberRentedFacilityTypes: rentedFacilityTypeIds,
+		MemberHasDiscountedRental: memberHasDiscountedRental,
 		BoatLengthMeters:          boatLengthMeters,
 	}
 

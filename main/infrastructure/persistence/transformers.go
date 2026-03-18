@@ -417,13 +417,14 @@ func ConvertDTOToRentedFacility(dto GetRentedFacilitiesByMemberQueryResult) faci
 		}
 
 		return facilityrental.RentedFacilityWithBoat{
-			Id:       domain.NewId[facilityrental.RentedFacility](dto.RentedFacilityID),
-			MemberId: domain.NewId[membership.Member](0), // Will be filled from query param
-			Facility: facility,
-			Validity: validity,
-			Price:    dto.Price,
-			Payment:  paymentInfo,
-			BoatInfo: boatInfo,
+			Id:              domain.NewId[facilityrental.RentedFacility](dto.RentedFacilityID),
+			MemberId:        domain.NewId[membership.Member](0), // Will be filled from query param
+			Facility:        facility,
+			Validity:        validity,
+			Price:           dto.Price,
+			Payment:         paymentInfo,
+			BoatInfo:        boatInfo,
+			DiscountApplied: dto.DiscountApplied,
 		}
 	}
 
@@ -445,23 +446,25 @@ func ConvertDTOToRentedFacility(dto GetRentedFacilitiesByMemberQueryResult) faci
 		}
 
 		return facilityrental.RentedFacilityWithLeerboard{
-			Id:            domain.NewId[facilityrental.RentedFacility](dto.RentedFacilityID),
-			MemberId:      domain.NewId[membership.Member](0), // Will be filled from query param
-			Facility:      facility,
-			Validity:      validity,
-			Price:         dto.Price,
-			Payment:       paymentInfo,
-			LeerboardInfo: leerboardInfo,
+			Id:              domain.NewId[facilityrental.RentedFacility](dto.RentedFacilityID),
+			MemberId:        domain.NewId[membership.Member](0), // Will be filled from query param
+			Facility:        facility,
+			Validity:        validity,
+			Price:           dto.Price,
+			Payment:         paymentInfo,
+			LeerboardInfo:   leerboardInfo,
+			DiscountApplied: dto.DiscountApplied,
 		}
 	}
 
 	// Simple facility without boat or leerboard
 	return facilityrental.SimpleRentedFacility{
-		Id:       domain.NewId[facilityrental.RentedFacility](dto.RentedFacilityID),
-		MemberId: domain.NewId[membership.Member](0), // Will be filled from query param
-		Facility: facility,
-		Validity: validity,
-		Price:    dto.Price,
-		Payment:  paymentInfo,
+		Id:              domain.NewId[facilityrental.RentedFacility](dto.RentedFacilityID),
+		MemberId:        domain.NewId[membership.Member](0), // Will be filled from query param
+		Facility:        facility,
+		Validity:        validity,
+		Price:           dto.Price,
+		Payment:         paymentInfo,
+		DiscountApplied: dto.DiscountApplied,
 	}
 }
