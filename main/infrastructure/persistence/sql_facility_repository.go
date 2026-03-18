@@ -37,6 +37,9 @@ var insertInsuranceQuery string
 //go:embed queries/insert_leerboard.sql
 var insertLeerboardQuery string
 
+//go:embed queries/update_rented_facility_facility_id.sql
+var updateRentedFacilityFacilityIdQuery string
+
 //go:embed queries/get_facility_pricing_rules.sql
 var getFacilityPricingRulesQuery string
 
@@ -522,4 +525,52 @@ func (r *SQLFacilityRepository) FreeFacility(rentedFacilityId domain.Id[facility
 	}
 
 	return result.Ok(true)
+}
+
+func (r *SQLFacilityRepository) ChangeFacility(
+	rentedFacilityId domain.Id[facilityrental.RentedFacility],
+	newFacilityId domain.Id[facilityrental.Facility],
+) result.Result[facilityrental.RentedFacility] {
+	ctx := context.Background()
+
+	// Update the facility_id in the rented_facilities table
+	_, err := r.db.ExecContext(ctx, updateRentedFacilityFacilityIdQuery,
+		newFacilityId.Value,
+		rentedFacilityId.Value,
+	)
+	if err != nil {
+		return result.Err[facilityrental.RentedFacility](
+			errors.RepositoryError{Description: "failed to update facility: " + err.Error()},
+		)
+	}
+
+	// Fetch the updated rental
+	// We need to get the member_id and season_id to fetch the updated rental
+	var memberId int64
+	var seasonId int64
+	err = r.db.QueryRowContext(ctx,
+		"SELECT member_id, season_id FROM rented_facilities WHERE id = $1 AND deleted_at IS NULL",
+		rentedFacilityId.Value,
+	).Scan(&memberId, &seasonId)
+	if err != nil {
+		return result.Err[facilityrental.RentedFacility](
+			errors.RepositoryError{Description: "failed to fetch updated rental: " + err.Error()},
+		)
+	}
+
+	// Get all rentals for this member and find the updated one
+	rentedFacilities := r.GetFacilitiesRentedByMember(
+		domain.Id[membership.User]{Value: memberId},
+		seasonId,
+	)
+
+	for _, rental := range rentedFacilities {
+		if rental.GetId().Value == rentedFacilityId.Value {
+			return result.Ok(rental)
+		}
+	}
+
+	return result.Err[facilityrental.RentedFacility](
+		errors.RepositoryError{Description: "failed to find updated rental"},
+	)
 }

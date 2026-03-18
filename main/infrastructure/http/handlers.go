@@ -401,14 +401,58 @@ func RentedFacilityByIDHandler(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		// Free the facility
 		result := rentalService.FreeFacility(rentedFacilityId)
 		if !result.IsSuccess() {
-			presentation.WriteError(w, http.StatusNotFound, result.Error().Error())
+			presentation.WriteError(w, http.StatusInternalServerError, result.Error().Error())
 			return
 		}
 
-		presentation.WriteJSON(w, http.StatusOK, map[string]bool{"success": true})
+		w.WriteHeader(http.StatusNoContent)
+
+	case http.MethodPatch:
+		if rentalService == nil {
+			presentation.WriteError(w, http.StatusInternalServerError, "service not initialized")
+			return
+		}
+
+		var req presentation.ChangeFacilityRequest
+		if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+			presentation.WriteError(w, http.StatusBadRequest, "invalid JSON: "+err.Error())
+			return
+		}
+
+		// Validate required fields
+		if req.NewFacilityId == 0 {
+			presentation.WriteError(w, http.StatusBadRequest, "newFacilityId is required")
+			return
+		}
+		if req.MemberId == 0 {
+			presentation.WriteError(w, http.StatusBadRequest, "memberId is required")
+			return
+		}
+		if req.SeasonId == 0 {
+			presentation.WriteError(w, http.StatusBadRequest, "seasonId is required")
+			return
+		}
+
+		newFacilityId := domain.Id[facilityrental.Facility]{Value: req.NewFacilityId}
+		memberId := domain.Id[membership.User]{Value: req.MemberId}
+
+		// Change the facility
+		result := rentalService.ChangeFacility(
+			rentedFacilityId,
+			newFacilityId,
+			memberId,
+			req.SeasonId,
+		)
+		if !result.IsSuccess() {
+			presentation.WriteError(w, http.StatusBadRequest, result.Error().Error())
+			return
+		}
+
+		// Convert to presentation and return
+		updatedFacility := presentation.ConvertRentedFacilityToPresentation(result.Value())
+		presentation.WriteJSON(w, http.StatusOK, updatedFacility)
 
 	default:
 		w.WriteHeader(http.StatusMethodNotAllowed)

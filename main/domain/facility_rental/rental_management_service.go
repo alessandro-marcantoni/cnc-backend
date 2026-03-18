@@ -4,6 +4,7 @@ import (
 	"github.com/alessandro-marcantoni/cnc-backend/main/domain"
 	"github.com/alessandro-marcantoni/cnc-backend/main/domain/facility_rental/pricing"
 	"github.com/alessandro-marcantoni/cnc-backend/main/domain/membership"
+	"github.com/alessandro-marcantoni/cnc-backend/main/shared/errors"
 	"github.com/alessandro-marcantoni/cnc-backend/main/shared/result"
 )
 
@@ -158,6 +159,65 @@ func (this RentalManagementService) RentService(
 	// - Either way, the facility rental succeeded
 
 	return rentResult
+}
+
+// ChangeFacility allows changing the specific facility for an existing rental
+// This is useful when a member was assigned the wrong facility identifier
+// The new facility must be of the same type and available
+func (this RentalManagementService) ChangeFacility(
+	rentedFacilityId domain.Id[RentedFacility],
+	newFacilityId domain.Id[Facility],
+	memberId domain.Id[membership.User],
+	season int64,
+) result.Result[RentedFacility] {
+	// Get the current rented facility
+	rentedFacilities := this.repository.GetFacilitiesRentedByMember(memberId, season)
+	var currentRental RentedFacility
+	found := false
+	for _, rf := range rentedFacilities {
+		if rf.GetId().Value == rentedFacilityId.Value {
+			currentRental = rf
+			found = true
+			break
+		}
+	}
+
+	if !found {
+		return result.Err[RentedFacility](errors.RepositoryError{
+			Description: "rental not found for this member",
+		})
+	}
+
+	// Get the new facility to validate it
+	newFacility, facilityFound := this.repository.GetFacilityById(newFacilityId)
+	if !facilityFound {
+		return result.Err[RentedFacility](errors.RepositoryError{
+			Description: "new facility not found",
+		})
+	}
+
+	// Verify the new facility is of the same type
+	currentFacility := currentRental.GetFacility()
+	if newFacility.FacilityTypeId.Value != currentFacility.FacilityType.Id.Value {
+		return result.Err[RentedFacility](errors.RepositoryError{
+			Description: "new facility must be of the same type as current facility",
+		})
+	}
+
+	// Verify the new facility is available (not rented)
+	if newFacility.IsRented {
+		return result.Err[RentedFacility](errors.RepositoryError{
+			Description: "new facility is already rented",
+		})
+	}
+
+	// Perform the change in repository
+	changeResult := this.repository.ChangeFacility(rentedFacilityId, newFacilityId)
+	if !changeResult.IsSuccess() {
+		return changeResult
+	}
+
+	return changeResult
 }
 
 func (this RentalManagementService) GetFacilitiesCatalog() []FacilityType {

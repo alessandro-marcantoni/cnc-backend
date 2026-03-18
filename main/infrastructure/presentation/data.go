@@ -151,6 +151,12 @@ type RentFacilityRequest struct {
 	LeerboardInfo *LeerboardInfo `json:"leerboardInfo,omitempty"`
 }
 
+type ChangeFacilityRequest struct {
+	NewFacilityId int64 `json:"newFacilityId"`
+	MemberId      int64 `json:"memberId"`
+	SeasonId      int64 `json:"seasonId"`
+}
+
 type CreatePaymentRequest struct {
 	MembershipPeriodId *int64  `json:"membershipPeriodId"`
 	RentedFacilityId   *int64  `json:"rentedFacilityId"`

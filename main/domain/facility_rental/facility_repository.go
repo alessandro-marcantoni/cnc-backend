@@ -23,6 +23,7 @@ type FacilityRepository interface {
 		boatInfo *BoatInfo,
 		leerboardInfo *LeerboardInfo,
 	) result.Result[RentedFacility]
+	ChangeFacility(rentedFacilityId domain.Id[RentedFacility], newFacilityId domain.Id[Facility]) result.Result[RentedFacility]
 	FreeFacility(rentedFacilityId domain.Id[RentedFacility]) result.Result[bool]
 }
 
