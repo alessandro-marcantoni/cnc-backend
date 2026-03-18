@@ -183,7 +183,8 @@ func ConvertRentedFacilityToPresentation(rf facilityrental.RentedFacility) Rente
 			boatInfo := &BoatInfo{
 				Name:         rfWithBoat.BoatInfo.Name,
 				LengthMeters: rfWithBoat.BoatInfo.LengthMeters,
-				WidthMeters:  rfWithBoat.BoatInfo.WidthMeters,
+				WidthMeters:  rfWithBoat.BoatInfo.WidthMeters, // Now nullable
+				Type:         rfWithBoat.BoatInfo.Type,
 				EngineInfo:   rfWithBoat.BoatInfo.EngineInfo,
 			}
 

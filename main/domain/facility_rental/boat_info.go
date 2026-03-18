@@ -3,7 +3,8 @@ package facilityrental
 type BoatInfo struct {
 	Name          string
 	LengthMeters  float64
-	WidthMeters   float64
+	WidthMeters   *float64 // Nullable - can be nil if not measured
+	Type          string   // Type/category of boat (e.g., Sailing, Motor, Inflatable)
 	EngineInfo    string
 	InsuranceInfo BoatInsuranceInfo
 }

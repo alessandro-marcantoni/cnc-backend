@@ -390,7 +390,8 @@ func ConvertDTOToRentedFacility(dto GetRentedFacilitiesByMemberQueryResult) faci
 	}
 
 	// Check if this is a boat facility (has boat info)
-	if dto.BoatID != nil && dto.BoatName != nil && dto.BoatLengthMeters != nil && dto.BoatWidthMeters != nil {
+	// Width is now nullable, so we don't require it
+	if dto.BoatID != nil && dto.BoatName != nil && dto.BoatLengthMeters != nil {
 		// Determine insurance info
 		var insuranceInfo facilityrental.BoatInsuranceInfo
 		if dto.InsuranceID != nil && dto.InsuranceProvider != nil && dto.InsuranceNumber != nil && dto.InsuranceExpiresAt != nil {
@@ -408,10 +409,16 @@ func ConvertDTOToRentedFacility(dto GetRentedFacilitiesByMemberQueryResult) faci
 			engineInfo = *dto.BoatEngineInfo
 		}
 
+		boatType := ""
+		if dto.BoatType != nil {
+			boatType = *dto.BoatType
+		}
+
 		boatInfo := facilityrental.BoatInfo{
 			Name:          *dto.BoatName,
 			LengthMeters:  *dto.BoatLengthMeters,
-			WidthMeters:   *dto.BoatWidthMeters,
+			WidthMeters:   dto.BoatWidthMeters, // Now nullable
+			Type:          boatType,
 			EngineInfo:    engineInfo,
 			InsuranceInfo: insuranceInfo,
 		}

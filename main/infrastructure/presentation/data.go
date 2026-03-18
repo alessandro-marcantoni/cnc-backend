@@ -35,7 +35,8 @@ type Membership struct {
 type BoatInfo struct {
 	Name         string      `json:"name"`
 	LengthMeters float64     `json:"lengthMeters"`
-	WidthMeters  float64     `json:"widthMeters"`
+	WidthMeters  *float64    `json:"widthMeters,omitempty"` // Nullable - can be omitted if not measured
+	Type         string      `json:"type,omitempty"`        // Type/category of boat
 	EngineInfo   string      `json:"engineInfo,omitempty"`
 	Insurances   []Insurance `json:"insurances,omitempty"`
 }

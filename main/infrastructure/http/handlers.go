@@ -285,8 +285,9 @@ func RentedFacilitiesHandler(w http.ResponseWriter, r *http.Request) {
 				presentation.WriteError(w, http.StatusBadRequest, "boat length must be greater than 0")
 				return
 			}
-			if req.BoatInfo.WidthMeters <= 0 {
-				presentation.WriteError(w, http.StatusBadRequest, "boat width must be greater than 0")
+			// Width is now optional/nullable
+			if req.BoatInfo.WidthMeters != nil && *req.BoatInfo.WidthMeters <= 0 {
+				presentation.WriteError(w, http.StatusBadRequest, "boat width must be greater than 0 if provided")
 				return
 			}
 			if len(req.BoatInfo.Insurances) == 0 {
@@ -304,7 +305,8 @@ func RentedFacilitiesHandler(w http.ResponseWriter, r *http.Request) {
 			boatInfo = &facilityrental.BoatInfo{
 				Name:         req.BoatInfo.Name,
 				LengthMeters: req.BoatInfo.LengthMeters,
-				WidthMeters:  req.BoatInfo.WidthMeters,
+				WidthMeters:  req.BoatInfo.WidthMeters, // Now nullable
+				Type:         req.BoatInfo.Type,
 				EngineInfo:   req.BoatInfo.EngineInfo,
 				InsuranceInfo: facilityrental.BoatInsurance{
 					ProviderName:   insurance.Provider,

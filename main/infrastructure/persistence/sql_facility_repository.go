@@ -272,6 +272,7 @@ func (r *SQLFacilityRepository) GetFacilitiesRentedByMember(memberId domain.Id[m
 			&dto.BoatLengthMeters,
 			&dto.BoatWidthMeters,
 			&dto.BoatEngineInfo,
+			&dto.BoatType,
 			&dto.InsuranceID,
 			&dto.InsuranceProvider,
 			&dto.InsuranceNumber,
@@ -336,13 +337,24 @@ func (r *SQLFacilityRepository) RentFacility(
 			engineInfo = sql.NullString{String: boatInfo.EngineInfo, Valid: true}
 		}
 
+		widthMeters := sql.NullFloat64{Valid: false}
+		if boatInfo.WidthMeters != nil {
+			widthMeters = sql.NullFloat64{Float64: *boatInfo.WidthMeters, Valid: true}
+		}
+
+		boatType := sql.NullString{Valid: false}
+		if boatInfo.Type != "" {
+			boatType = sql.NullString{String: boatInfo.Type, Valid: true}
+		}
+
 		var boatId int64
 		err = tx.QueryRowContext(ctx, insertBoatQuery,
 			rentedFacilityId,
 			boatInfo.Name,
 			boatInfo.LengthMeters,
-			boatInfo.WidthMeters,
+			widthMeters,
 			engineInfo,
+			boatType,
 		).Scan(&boatId)
 		if err != nil {
 			return result.Err[facilityrental.RentedFacility](errors.RepositoryError{Description: "failed to insert boat info: " + err.Error()})

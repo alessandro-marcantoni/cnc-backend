@@ -18,6 +18,7 @@ SELECT
     b.length_meters       AS boat_length_meters,
     b.width_meters        AS boat_width_meters,
     b.engine_info         AS boat_engine_info,
+    b.type                AS boat_type,
 
     i.id                  AS insurance_id,
     i.provider            AS insurance_provider,
