@@ -456,6 +456,136 @@ func RentedFacilityByIDHandler(w http.ResponseWriter, r *http.Request) {
 		updatedFacility := presentation.ConvertRentedFacilityToPresentation(result.Value())
 		presentation.WriteJSON(w, http.StatusOK, updatedFacility)
 
+	case http.MethodPut:
+		if rentalService == nil {
+			presentation.WriteError(w, http.StatusInternalServerError, "service not initialized")
+			return
+		}
+
+		// Read body to determine if it's boat or leerboard update
+		var body map[string]interface{}
+		if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+			presentation.WriteError(w, http.StatusBadRequest, "invalid JSON: "+err.Error())
+			return
+		}
+
+		// Check if this is a boat info update (has boat-specific fields)
+		if _, hasBoat := body["name"]; hasBoat {
+			var req presentation.UpdateBoatInfoRequest
+			// Re-decode into proper struct
+			bodyBytes, _ := json.Marshal(body)
+			if err := json.Unmarshal(bodyBytes, &req); err != nil {
+				presentation.WriteError(w, http.StatusBadRequest, "invalid boat info: "+err.Error())
+				return
+			}
+
+			// Validate required fields
+			if req.MemberId == 0 {
+				presentation.WriteError(w, http.StatusBadRequest, "memberId is required")
+				return
+			}
+			if req.SeasonId == 0 {
+				presentation.WriteError(w, http.StatusBadRequest, "seasonId is required")
+				return
+			}
+			if req.Name == "" {
+				presentation.WriteError(w, http.StatusBadRequest, "name is required")
+				return
+			}
+			if req.LengthMeters <= 0 {
+				presentation.WriteError(w, http.StatusBadRequest, "lengthMeters must be positive")
+				return
+			}
+
+			// Build boat info
+			boatInfo := facilityrental.BoatInfo{
+				Name:         req.Name,
+				LengthMeters: req.LengthMeters,
+				WidthMeters:  req.WidthMeters,
+				Type:         req.Type,
+				EngineInfo:   req.EngineInfo,
+			}
+
+			// Add insurance if provided
+			if req.InsuranceProvider != "" && req.InsuranceNumber != "" && req.InsuranceExpires != "" {
+				boatInfo.InsuranceInfo = facilityrental.BoatInsurance{
+					ProviderName:   req.InsuranceProvider,
+					PolicyNumber:   req.InsuranceNumber,
+					ExpirationDate: req.InsuranceExpires,
+				}
+			} else {
+				boatInfo.InsuranceInfo = facilityrental.NoBoatInsurance{}
+			}
+
+			memberId := domain.Id[membership.User]{Value: req.MemberId}
+
+			// Update boat info
+			result := rentalService.UpdateBoatInfo(
+				rentedFacilityId,
+				memberId,
+				req.SeasonId,
+				boatInfo,
+			)
+			if !result.IsSuccess() {
+				presentation.WriteError(w, http.StatusBadRequest, result.Error().Error())
+				return
+			}
+
+			// Convert to presentation and return
+			updatedFacility := presentation.ConvertRentedFacilityToPresentation(result.Value())
+			presentation.WriteJSON(w, http.StatusOK, updatedFacility)
+			return
+		}
+
+		// Check if this is a leerboard info update (has leerboard-specific fields)
+		if _, hasColor := body["color"]; hasColor {
+			var req presentation.UpdateLeerboardInfoRequest
+			// Re-decode into proper struct
+			bodyBytes, _ := json.Marshal(body)
+			if err := json.Unmarshal(bodyBytes, &req); err != nil {
+				presentation.WriteError(w, http.StatusBadRequest, "invalid leerboard info: "+err.Error())
+				return
+			}
+
+			// Validate required fields
+			if req.MemberId == 0 {
+				presentation.WriteError(w, http.StatusBadRequest, "memberId is required")
+				return
+			}
+			if req.SeasonId == 0 {
+				presentation.WriteError(w, http.StatusBadRequest, "seasonId is required")
+				return
+			}
+
+			// Build leerboard info
+			leerboardInfo := facilityrental.LeerboardInfo{
+				Color:        req.Color,
+				Type:         req.Type,
+				LengthMeters: req.LengthMeters,
+			}
+
+			memberId := domain.Id[membership.User]{Value: req.MemberId}
+
+			// Update leerboard info
+			result := rentalService.UpdateLeerboardInfo(
+				rentedFacilityId,
+				memberId,
+				req.SeasonId,
+				leerboardInfo,
+			)
+			if !result.IsSuccess() {
+				presentation.WriteError(w, http.StatusBadRequest, result.Error().Error())
+				return
+			}
+
+			// Convert to presentation and return
+			updatedFacility := presentation.ConvertRentedFacilityToPresentation(result.Value())
+			presentation.WriteJSON(w, http.StatusOK, updatedFacility)
+			return
+		}
+
+		presentation.WriteError(w, http.StatusBadRequest, "invalid request body: must contain either boat or leerboard info")
+
 	default:
 		w.WriteHeader(http.StatusMethodNotAllowed)
 		return

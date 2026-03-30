@@ -40,6 +40,15 @@ var insertLeerboardQuery string
 //go:embed queries/update_rented_facility_facility_id.sql
 var updateRentedFacilityFacilityIdQuery string
 
+//go:embed queries/update_boat.sql
+var updateBoatQuery string
+
+//go:embed queries/update_insurance.sql
+var updateInsuranceQuery string
+
+//go:embed queries/update_leerboard.sql
+var updateLeerboardQuery string
+
 //go:embed queries/get_facility_pricing_rules.sql
 var getFacilityPricingRulesQuery string
 
@@ -558,6 +567,141 @@ func (r *SQLFacilityRepository) ChangeFacility(
 
 	// Fetch the updated rental
 	// We need to get the member_id and season_id to fetch the updated rental
+	var memberId int64
+	var seasonId int64
+	err = r.db.QueryRowContext(ctx,
+		"SELECT member_id, season_id FROM rented_facilities WHERE id = $1 AND deleted_at IS NULL",
+		rentedFacilityId.Value,
+	).Scan(&memberId, &seasonId)
+	if err != nil {
+		return result.Err[facilityrental.RentedFacility](
+			errors.RepositoryError{Description: "failed to fetch updated rental: " + err.Error()},
+		)
+	}
+
+	// Get all rentals for this member and find the updated one
+	rentedFacilities := r.GetFacilitiesRentedByMember(
+		domain.Id[membership.User]{Value: memberId},
+		seasonId,
+	)
+
+	for _, rental := range rentedFacilities {
+		if rental.GetId().Value == rentedFacilityId.Value {
+			return result.Ok(rental)
+		}
+	}
+
+	return result.Err[facilityrental.RentedFacility](
+		errors.RepositoryError{Description: "failed to find updated rental"},
+	)
+}
+
+func (r *SQLFacilityRepository) UpdateBoatInfo(
+	rentedFacilityId domain.Id[facilityrental.RentedFacility],
+	boatInfo facilityrental.BoatInfo,
+) result.Result[facilityrental.RentedFacility] {
+	ctx := context.Background()
+
+	// Start a transaction
+	tx, err := r.db.BeginTx(ctx, nil)
+	if err != nil {
+		return result.Err[facilityrental.RentedFacility](
+			errors.RepositoryError{Description: "failed to start transaction: " + err.Error()},
+		)
+	}
+	defer tx.Rollback()
+
+	// Update boat information
+	var boatId int64
+	err = tx.QueryRowContext(ctx, updateBoatQuery,
+		rentedFacilityId.Value,
+		boatInfo.Name,
+		boatInfo.LengthMeters,
+		boatInfo.WidthMeters,
+		boatInfo.EngineInfo,
+		boatInfo.Type,
+	).Scan(&boatId)
+	if err != nil {
+		return result.Err[facilityrental.RentedFacility](
+			errors.RepositoryError{Description: "failed to update boat: " + err.Error()},
+		)
+	}
+
+	// Update insurance if provided
+	if boatInfo.HasInsurance() {
+		insurance, ok := boatInfo.InsuranceInfo.(facilityrental.BoatInsurance)
+		if ok {
+			_, err = tx.ExecContext(ctx, updateInsuranceQuery,
+				boatId,
+				insurance.ProviderName,
+				insurance.PolicyNumber,
+				insurance.ExpirationDate,
+			)
+			if err != nil {
+				return result.Err[facilityrental.RentedFacility](
+					errors.RepositoryError{Description: "failed to update insurance: " + err.Error()},
+				)
+			}
+		}
+	}
+
+	// Commit transaction
+	if err = tx.Commit(); err != nil {
+		return result.Err[facilityrental.RentedFacility](
+			errors.RepositoryError{Description: "failed to commit transaction: " + err.Error()},
+		)
+	}
+
+	// Fetch the updated rental
+	var memberId int64
+	var seasonId int64
+	err = r.db.QueryRowContext(ctx,
+		"SELECT member_id, season_id FROM rented_facilities WHERE id = $1 AND deleted_at IS NULL",
+		rentedFacilityId.Value,
+	).Scan(&memberId, &seasonId)
+	if err != nil {
+		return result.Err[facilityrental.RentedFacility](
+			errors.RepositoryError{Description: "failed to fetch updated rental: " + err.Error()},
+		)
+	}
+
+	// Get all rentals for this member and find the updated one
+	rentedFacilities := r.GetFacilitiesRentedByMember(
+		domain.Id[membership.User]{Value: memberId},
+		seasonId,
+	)
+
+	for _, rental := range rentedFacilities {
+		if rental.GetId().Value == rentedFacilityId.Value {
+			return result.Ok(rental)
+		}
+	}
+
+	return result.Err[facilityrental.RentedFacility](
+		errors.RepositoryError{Description: "failed to find updated rental"},
+	)
+}
+
+func (r *SQLFacilityRepository) UpdateLeerboardInfo(
+	rentedFacilityId domain.Id[facilityrental.RentedFacility],
+	leerboardInfo facilityrental.LeerboardInfo,
+) result.Result[facilityrental.RentedFacility] {
+	ctx := context.Background()
+
+	// Update leerboard information
+	_, err := r.db.ExecContext(ctx, updateLeerboardQuery,
+		rentedFacilityId.Value,
+		leerboardInfo.Color,
+		leerboardInfo.Type,
+		leerboardInfo.LengthMeters,
+	)
+	if err != nil {
+		return result.Err[facilityrental.RentedFacility](
+			errors.RepositoryError{Description: "failed to update leerboard: " + err.Error()},
+		)
+	}
+
+	// Fetch the updated rental
 	var memberId int64
 	var seasonId int64
 	err = r.db.QueryRowContext(ctx,

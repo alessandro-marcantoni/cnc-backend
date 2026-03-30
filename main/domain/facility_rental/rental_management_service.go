@@ -336,6 +336,78 @@ func (this RentalManagementService) GetApplicableDiscountsForMember(
 	)
 }
 
+// UpdateBoatInfo updates the boat information for an existing boat facility rental
+func (this RentalManagementService) UpdateBoatInfo(
+	rentedFacilityId domain.Id[RentedFacility],
+	memberId domain.Id[membership.User],
+	season int64,
+	boatInfo BoatInfo,
+) result.Result[RentedFacility] {
+	// Get the current rented facility to verify it's a boat facility
+	rentedFacilities := this.repository.GetFacilitiesRentedByMember(memberId, season)
+	var currentRental RentedFacility
+	found := false
+	for _, rf := range rentedFacilities {
+		if rf.GetId().Value == rentedFacilityId.Value {
+			currentRental = rf
+			found = true
+			break
+		}
+	}
+
+	if !found {
+		return result.Err[RentedFacility](errors.RepositoryError{
+			Description: "rental not found for this member",
+		})
+	}
+
+	// Verify this is a boat facility
+	if currentRental.GetType() != BoatFacility {
+		return result.Err[RentedFacility](errors.RepositoryError{
+			Description: "cannot update boat info for non-boat facility",
+		})
+	}
+
+	// Update the boat information in repository
+	return this.repository.UpdateBoatInfo(rentedFacilityId, boatInfo)
+}
+
+// UpdateLeerboardInfo updates the leerboard information for an existing leerboard facility rental
+func (this RentalManagementService) UpdateLeerboardInfo(
+	rentedFacilityId domain.Id[RentedFacility],
+	memberId domain.Id[membership.User],
+	season int64,
+	leerboardInfo LeerboardInfo,
+) result.Result[RentedFacility] {
+	// Get the current rented facility to verify it's a leerboard facility
+	rentedFacilities := this.repository.GetFacilitiesRentedByMember(memberId, season)
+	var currentRental RentedFacility
+	found := false
+	for _, rf := range rentedFacilities {
+		if rf.GetId().Value == rentedFacilityId.Value {
+			currentRental = rf
+			found = true
+			break
+		}
+	}
+
+	if !found {
+		return result.Err[RentedFacility](errors.RepositoryError{
+			Description: "rental not found for this member",
+		})
+	}
+
+	// Verify this is a leerboard facility
+	if currentRental.GetType() != LeerboardFacility {
+		return result.Err[RentedFacility](errors.RepositoryError{
+			Description: "cannot update leerboard info for non-leerboard facility",
+		})
+	}
+
+	// Update the leerboard information in repository
+	return this.repository.UpdateLeerboardInfo(rentedFacilityId, leerboardInfo)
+}
+
 func (this RentalManagementService) FreeFacility(rentedFacilityId domain.Id[RentedFacility]) result.Result[bool] {
 	return this.repository.FreeFacility(rentedFacilityId)
 }

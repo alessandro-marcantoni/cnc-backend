@@ -158,6 +158,27 @@ type ChangeFacilityRequest struct {
 	SeasonId      int64 `json:"seasonId"`
 }
 
+type UpdateBoatInfoRequest struct {
+	MemberId          int64    `json:"memberId"`
+	SeasonId          int64    `json:"seasonId"`
+	Name              string   `json:"name"`
+	LengthMeters      float64  `json:"lengthMeters"`
+	WidthMeters       *float64 `json:"widthMeters"`
+	Type              string   `json:"type"`
+	EngineInfo        string   `json:"engineInfo"`
+	InsuranceProvider string   `json:"insuranceProvider"`
+	InsuranceNumber   string   `json:"insuranceNumber"`
+	InsuranceExpires  string   `json:"insuranceExpiresAt"`
+}
+
+type UpdateLeerboardInfoRequest struct {
+	MemberId     int64   `json:"memberId"`
+	SeasonId     int64   `json:"seasonId"`
+	Color        string  `json:"color"`
+	Type         string  `json:"type"`
+	LengthMeters float64 `json:"lengthMeters"`
+}
+
 type CreatePaymentRequest struct {
 	MembershipPeriodId *int64  `json:"membershipPeriodId"`
 	RentedFacilityId   *int64  `json:"rentedFacilityId"`
