@@ -13,6 +13,7 @@ type User struct {
 	BirthDate    time.Time
 	Email        *EmailAddress // Optional email
 	TaxCode      string        // Italian tax code (Codice Fiscale)
+	BirthPlace   *Address      // Optional birthplace (same structure as Address)
 	Addresses    []Address
 	PhoneNumbers []PhoneNumber
 }

@@ -584,6 +584,31 @@ func RentedFacilityByIDHandler(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
+		// Check if this is a price update
+		if _, hasPrice := body["price"]; hasPrice {
+			var req presentation.UpdatePriceRequest
+			bodyBytes, _ := json.Marshal(body)
+			if err := json.Unmarshal(bodyBytes, &req); err != nil {
+				presentation.WriteError(w, http.StatusBadRequest, "invalid price update: "+err.Error())
+				return
+			}
+
+			if req.Price < 0 {
+				presentation.WriteError(w, http.StatusBadRequest, "price cannot be negative")
+				return
+			}
+
+			result := rentalService.UpdatePrice(rentedFacilityId, req.Price)
+			if !result.IsSuccess() {
+				presentation.WriteError(w, http.StatusBadRequest, result.Error().Error())
+				return
+			}
+
+			updatedFacility := presentation.ConvertRentedFacilityToPresentation(result.Value())
+			presentation.WriteJSON(w, http.StatusOK, updatedFacility)
+			return
+		}
+
 		presentation.WriteError(w, http.StatusBadRequest, "invalid request body: must contain either boat or leerboard info")
 
 	default:

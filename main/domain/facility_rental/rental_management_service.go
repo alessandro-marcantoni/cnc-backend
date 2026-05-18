@@ -411,3 +411,11 @@ func (this RentalManagementService) UpdateLeerboardInfo(
 func (this RentalManagementService) FreeFacility(rentedFacilityId domain.Id[RentedFacility]) result.Result[bool] {
 	return this.repository.FreeFacility(rentedFacilityId)
 }
+
+// UpdatePrice updates the price of an existing facility rental
+func (this RentalManagementService) UpdatePrice(
+	rentedFacilityId domain.Id[RentedFacility],
+	price float64,
+) result.Result[RentedFacility] {
+	return this.repository.UpdatePrice(rentedFacilityId, price)
+}

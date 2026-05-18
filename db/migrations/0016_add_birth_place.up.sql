@@ -1,0 +1,12 @@
+CREATE TABLE IF NOT EXISTS birth_places (
+    id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+    member_id BIGINT NOT NULL UNIQUE REFERENCES members(id) ON DELETE CASCADE,
+    country VARCHAR(100) NOT NULL DEFAULT '',
+    city VARCHAR(100) NOT NULL DEFAULT '',
+    zip_code VARCHAR(20) NOT NULL DEFAULT '',
+    street VARCHAR(255) NOT NULL DEFAULT '',
+    street_number VARCHAR(20) NOT NULL DEFAULT ''
+);
+
+CREATE INDEX IF NOT EXISTS idx_birth_places_member
+ON birth_places(member_id);

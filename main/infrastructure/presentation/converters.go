@@ -122,6 +122,17 @@ func ConvertMemberDetailsToPresentation(domainMember membership.MemberDetails) M
 		email = domainMember.User.Email.Value
 	}
 
+	var birthPlace *Address
+	if domainMember.User.BirthPlace != nil {
+		birthPlace = &Address{
+			Country:      domainMember.User.BirthPlace.Country,
+			City:         domainMember.User.BirthPlace.City,
+			Street:       domainMember.User.BirthPlace.Street,
+			StreetNumber: domainMember.User.BirthPlace.Number,
+			ZipCode:      domainMember.User.BirthPlace.ZipCode,
+		}
+	}
+
 	return MemberDetails{
 		ID:           domainMember.User.Id.Value,
 		FirstName:    domainMember.User.FirstName,
@@ -129,6 +140,7 @@ func ConvertMemberDetailsToPresentation(domainMember membership.MemberDetails) M
 		Email:        email,
 		BirthDate:    birthDate,
 		TaxCode:      domainMember.User.TaxCode,
+		BirthPlace:   birthPlace,
 		PhoneNumbers: convertPhoneNumbersToPresentation(domainMember.PhoneNumbers),
 		Addresses:    convertAddressesToPresentation(domainMember.Addresses),
 		Memberships:  convertMembershipsToPresentation(domainMember.Memberships),
@@ -309,12 +321,24 @@ func ConvertCreateMemberRequestToDomain(req CreateMemberRequest) (CreateMemberDa
 		})
 	}
 
+	var birthPlace *membership.Address
+	if req.BirthPlace != nil {
+		birthPlace = &membership.Address{
+			Country: req.BirthPlace.Country,
+			City:    req.BirthPlace.City,
+			ZipCode: req.BirthPlace.ZipCode,
+			Street:  req.BirthPlace.Street,
+			Number:  req.BirthPlace.StreetNumber,
+		}
+	}
+
 	user := membership.User{
 		FirstName:    req.FirstName,
 		LastName:     req.LastName,
 		BirthDate:    birthDate,
 		Email:        email,
 		TaxCode:      req.TaxCode,
+		BirthPlace:   birthPlace,
 		Addresses:    addresses,
 		PhoneNumbers: phoneNumbers,
 	}
@@ -398,12 +422,24 @@ func ConvertUpdateMemberRequestToDomain(req UpdateMemberRequest) (membership.Use
 		})
 	}
 
+	var birthPlace *membership.Address
+	if req.BirthPlace != nil {
+		birthPlace = &membership.Address{
+			Country: req.BirthPlace.Country,
+			City:    req.BirthPlace.City,
+			ZipCode: req.BirthPlace.ZipCode,
+			Street:  req.BirthPlace.Street,
+			Number:  req.BirthPlace.StreetNumber,
+		}
+	}
+
 	user := membership.User{
 		FirstName:    req.FirstName,
 		LastName:     req.LastName,
 		BirthDate:    birthDate,
 		Email:        email,
 		TaxCode:      req.TaxCode,
+		BirthPlace:   birthPlace,
 		Addresses:    addresses,
 		PhoneNumbers: phoneNumbers,
 	}

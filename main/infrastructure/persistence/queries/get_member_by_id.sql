@@ -69,11 +69,17 @@ SELECT
             END
         )) FILTER (WHERE md.membership_id IS NOT NULL),
         '[]'::json
-    ) AS memberships
+    ) AS memberships,
+    bp.country AS birth_place_country,
+    bp.city AS birth_place_city,
+    bp.street AS birth_place_street,
+    bp.street_number AS birth_place_street_number,
+    bp.zip_code AS birth_place_zip_code
 FROM members m
 LEFT JOIN phone_numbers pn ON m.id = pn.member_id
 LEFT JOIN addresses a ON m.id = a.member_id
 LEFT JOIN membership_details md ON m.id = md.member_id
 LEFT JOIN membership_statuses ms ON ms.id = md.status_id
+LEFT JOIN birth_places bp ON m.id = bp.member_id
 WHERE m.id = $1
-GROUP BY m.id;
+GROUP BY m.id, bp.country, bp.city, bp.street, bp.street_number, bp.zip_code;

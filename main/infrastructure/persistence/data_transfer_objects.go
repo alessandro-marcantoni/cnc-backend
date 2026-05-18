@@ -7,15 +7,20 @@ import (
 )
 
 type GetMemberByIdQueryResult struct {
-	MemberID     int64           `json:"member_id"`
-	FirstName    string          `json:"first_name"`
-	LastName     string          `json:"last_name"`
-	DateOfBirth  time.Time       `json:"date_of_birth"`
-	Email        sql.NullString  `json:"email"`
-	TaxCode      sql.NullString  `json:"tax_code"`
-	PhoneNumbers json.RawMessage `json:"phone_numbers"`
-	Addresses    json.RawMessage `json:"addresses"`
-	Memberships  json.RawMessage `json:"memberships"`
+	MemberID            int64           `json:"member_id"`
+	FirstName           string          `json:"first_name"`
+	LastName            string          `json:"last_name"`
+	DateOfBirth         time.Time       `json:"date_of_birth"`
+	Email               sql.NullString  `json:"email"`
+	TaxCode             sql.NullString  `json:"tax_code"`
+	PhoneNumbers        json.RawMessage `json:"phone_numbers"`
+	Addresses           json.RawMessage `json:"addresses"`
+	Memberships         json.RawMessage `json:"memberships"`
+	BirthPlaceCountry   sql.NullString  `json:"birth_place_country"`
+	BirthPlaceCity      sql.NullString  `json:"birth_place_city"`
+	BirthPlaceStreet    sql.NullString  `json:"birth_place_street"`
+	BirthPlaceStreetNum sql.NullString  `json:"birth_place_street_number"`
+	BirthPlaceZipCode   sql.NullString  `json:"birth_place_zip_code"`
 }
 
 type GetAllMembersQueryResult struct {

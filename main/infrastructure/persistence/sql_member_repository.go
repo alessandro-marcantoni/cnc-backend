@@ -47,6 +47,12 @@ var deletePhoneNumbersQuery string
 //go:embed queries/delete_addresses.sql
 var deleteAddressesQuery string
 
+//go:embed queries/insert_birth_place.sql
+var insertBirthPlaceQuery string
+
+//go:embed queries/delete_birth_place.sql
+var deleteBirthPlaceQuery string
+
 type SQLMemberRepository struct {
 	db *sql.DB
 }
@@ -160,6 +166,11 @@ func (r *SQLMemberRepository) GetMemberById(id domain.Id[m.Member], season int64
 		&resultRow.PhoneNumbers,
 		&resultRow.Addresses,
 		&resultRow.Memberships,
+		&resultRow.BirthPlaceCountry,
+		&resultRow.BirthPlaceCity,
+		&resultRow.BirthPlaceStreet,
+		&resultRow.BirthPlaceStreetNum,
+		&resultRow.BirthPlaceZipCode,
 	)
 
 	return result.MapErr(result.Bind(result.From(true, err), func(_ bool) result.Result[m.MemberDetails] {
@@ -236,6 +247,21 @@ func (r *SQLMemberRepository) CreateMember(user m.User, createMembership bool, s
 		)
 		if err != nil {
 			return result.Err[m.MemberDetails](errors.RepositoryError{Description: "failed to insert address: " + err.Error()})
+		}
+	}
+
+	// 4. Insert birth place if provided
+	if user.BirthPlace != nil {
+		_, err = tx.ExecContext(ctx, insertBirthPlaceQuery,
+			memberId,
+			user.BirthPlace.Country,
+			user.BirthPlace.City,
+			user.BirthPlace.ZipCode,
+			user.BirthPlace.Street,
+			user.BirthPlace.Number,
+		)
+		if err != nil {
+			return result.Err[m.MemberDetails](errors.RepositoryError{Description: "failed to insert birth place: " + err.Error()})
 		}
 	}
 
@@ -423,6 +449,25 @@ func (r *SQLMemberRepository) UpdateMember(id domain.Id[m.Member], user m.User, 
 		)
 		if err != nil {
 			return result.Err[m.MemberDetails](errors.RepositoryError{Description: "failed to insert address: " + err.Error()})
+		}
+	}
+
+	// 6. Upsert birth place (delete then insert)
+	_, err = tx.ExecContext(ctx, deleteBirthPlaceQuery, id.Value)
+	if err != nil {
+		return result.Err[m.MemberDetails](errors.RepositoryError{Description: "failed to delete birth place: " + err.Error()})
+	}
+	if user.BirthPlace != nil {
+		_, err = tx.ExecContext(ctx, insertBirthPlaceQuery,
+			id.Value,
+			user.BirthPlace.Country,
+			user.BirthPlace.City,
+			user.BirthPlace.ZipCode,
+			user.BirthPlace.Street,
+			user.BirthPlace.Number,
+		)
+		if err != nil {
+			return result.Err[m.MemberDetails](errors.RepositoryError{Description: "failed to insert birth place: " + err.Error()})
 		}
 	}
 

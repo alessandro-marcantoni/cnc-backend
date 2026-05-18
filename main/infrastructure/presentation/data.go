@@ -74,6 +74,7 @@ type MemberDetails struct {
 	Email        string        `json:"email"`
 	BirthDate    string        `json:"birthDate"`
 	TaxCode      string        `json:"taxCode,omitempty"`
+	BirthPlace   *Address      `json:"birthPlace,omitempty"`
 	PhoneNumbers []PhoneNumber `json:"phoneNumbers"`
 	Addresses    []Address     `json:"addresses"`
 	Memberships  []Membership  `json:"memberships"`
@@ -126,6 +127,7 @@ type CreateMemberRequest struct {
 	BirthDate        string        `json:"birthDate"`
 	Email            string        `json:"email"`
 	TaxCode          string        `json:"taxCode,omitempty"`
+	BirthPlace       *Address      `json:"birthPlace,omitempty"`
 	PhoneNumbers     []PhoneNumber `json:"phoneNumbers"`
 	Addresses        []Address     `json:"addresses"`
 	CreateMembership bool          `json:"createMembership"`
@@ -229,6 +231,11 @@ type UpdateMemberRequest struct {
 	BirthDate    string        `json:"birthDate"`
 	Email        string        `json:"email"`
 	TaxCode      string        `json:"taxCode,omitempty"`
+	BirthPlace   *Address      `json:"birthPlace,omitempty"`
 	PhoneNumbers []PhoneNumber `json:"phoneNumbers"`
 	Addresses    []Address     `json:"addresses"`
+}
+
+type UpdatePriceRequest struct {
+	Price float64 `json:"price"`
 }

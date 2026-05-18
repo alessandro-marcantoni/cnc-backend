@@ -26,6 +26,7 @@ type FacilityRepository interface {
 	ChangeFacility(rentedFacilityId domain.Id[RentedFacility], newFacilityId domain.Id[Facility]) result.Result[RentedFacility]
 	UpdateBoatInfo(rentedFacilityId domain.Id[RentedFacility], boatInfo BoatInfo) result.Result[RentedFacility]
 	UpdateLeerboardInfo(rentedFacilityId domain.Id[RentedFacility], leerboardInfo LeerboardInfo) result.Result[RentedFacility]
+	UpdatePrice(rentedFacilityId domain.Id[RentedFacility], price float64) result.Result[RentedFacility]
 	FreeFacility(rentedFacilityId domain.Id[RentedFacility]) result.Result[bool]
 }
 

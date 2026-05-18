@@ -162,6 +162,17 @@ func MapToMemberFromMemberByIdQuery(queryResult GetMemberByIdQueryResult) result
 		}
 	}
 
+	var birthPlace *membership.Address
+	if queryResult.BirthPlaceCity.Valid && queryResult.BirthPlaceCity.String != "" {
+		birthPlace = &membership.Address{
+			Country: queryResult.BirthPlaceCountry.String,
+			City:    queryResult.BirthPlaceCity.String,
+			ZipCode: queryResult.BirthPlaceZipCode.String,
+			Street:  queryResult.BirthPlaceStreet.String,
+			Number:  queryResult.BirthPlaceStreetNum.String,
+		}
+	}
+
 	return result.Ok(membership.MemberDetails{
 		User: membership.User{
 			Id:           domain.Id[membership.User]{Value: queryResult.MemberID},
@@ -170,10 +181,11 @@ func MapToMemberFromMemberByIdQuery(queryResult GetMemberByIdQueryResult) result
 			BirthDate:    queryResult.DateOfBirth,
 			Email:        email,
 			TaxCode:      taxCode,
+			BirthPlace:   birthPlace,
 			Addresses:    addresses,
 			PhoneNumbers: phoneNumbers,
 		},
-		Memberships: domainMemberships, // Assuming one membership for simplicity
+		Memberships: domainMemberships,
 	})
 }
 
